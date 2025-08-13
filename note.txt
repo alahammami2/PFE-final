@@ -1,0 +1,2 @@
+# Startup command
+mvn clean install; if ($LASTEXITCODE -eq 0) { java -jar (Get-Item .\target\*.jar) }

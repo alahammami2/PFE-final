@@ -1,0 +1,522 @@
+================================================================================
+                    DOCUMENTATION MICROSERVICE PLANNING-SERVICE
+                    Plateforme Intelligente - Gestion Équipe Volleyball
+================================================================================
+
+📅 DESCRIPTION GÉNÉRALE
+================================================================================
+Le microservice planning-service est responsable de la gestion des événements 
+et de la planification pour une équipe de volleyball. Il permet de créer, 
+consulter, modifier et supprimer des événements (entraînements, matchs, 
+réunions, compétitions, etc.).
+
+🏗️ ARCHITECTURE TECHNIQUE
+================================================================================
+- Framework: Spring Boot 3.2.0
+- Langage: Java 21
+- Base de données: PostgreSQL
+- Port: 8082
+- Context Path: /api/planning
+- Sécurité: Spring Security (désactivée pour développement)
+- Containerisation: Docker + Docker Compose
+
+📊 MODÈLE DE DONNÉES
+================================================================================
+
+Table: events
+-------------
+- id (BIGSERIAL PRIMARY KEY) - Identifiant unique
+- titre (VARCHAR(100) NOT NULL) - Titre de l'événement
+- description (VARCHAR(500)) - Description détaillée
+- date_debut (TIMESTAMP NOT NULL) - Date et heure de début
+- date_fin (TIMESTAMP NOT NULL) - Date et heure de fin
+- type (VARCHAR(20) NOT NULL) - Type d'événement (ENUM)
+- lieu (VARCHAR(200)) - Lieu de l'événement
+- actif (BOOLEAN DEFAULT TRUE) - Statut actif/inactif
+- date_creation (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date de création
+- date_modification (TIMESTAMP) - Date de dernière modification
+
+Types d'événements supportés:
+- ENTRAINEMENT: Entraînement
+- MATCH: Match
+- REUNION: Réunion
+- COMPETITION: Compétition
+- EVENEMENT: Événement
+- AUTRE: Autre
+
+Index créés:
+- idx_events_actif ON events(actif)
+- idx_events_type ON events(type)
+- idx_events_date_debut ON events(date_debut)
+- idx_events_date_fin ON events(date_fin)
+
+🔗 ENDPOINTS API
+================================================================================
+
+Base URL: http://localhost:8082/api/planning
+
+1. HEALTH CHECK
+   ------------
+   GET /health
+   Description: Vérifier l'état du service
+   Réponse:
+   {
+     "success": true,
+     "message": "Service de planification opérationnel",
+     "data": "Planning Service v1.0.0"
+   }
+
+2. CRÉER UN ÉVÉNEMENT
+   ------------------
+   POST /events
+   Content-Type: application/json
+   
+   Body (exemple):
+   {
+     "titre": "Entraînement Équipe Senior",
+     "description": "Entraînement technique et tactique",
+     "dateDebut": "2025-08-08T18:00:00",
+     "dateFin": "2025-08-08T20:00:00",
+     "type": "ENTRAINEMENT",
+     "lieu": "Gymnase Municipal"
+   }
+   
+   Réponse succès:
+   {
+     "success": true,
+     "message": "Événement créé avec succès",
+     "data": {
+       "id": 1,
+       "titre": "Entraînement Équipe Senior",
+       "description": "Entraînement technique et tactique",
+       "dateDebut": "2025-08-08T18:00:00",
+       "dateFin": "2025-08-08T20:00:00",
+       "type": "ENTRAINEMENT",
+       "lieu": "Gymnase Municipal",
+       "actif": true,
+       "dateCreation": "2025-08-08T01:30:00",
+       "dateModification": null
+     }
+   }
+
+3. RÉCUPÉRER TOUS LES ÉVÉNEMENTS
+   -----------------------------
+   GET /events
+   Description: Récupère tous les événements actifs
+   
+   Réponse:
+   {
+     "success": true,
+     "message": "Événements récupérés avec succès",
+     "data": [
+       {
+         "id": 1,
+         "titre": "Entraînement technique",
+         "description": "...",
+         "dateDebut": "2025-08-09T18:00:00",
+         "dateFin": "2025-08-09T20:00:00",
+         "type": "ENTRAINEMENT",
+         "lieu": "Gymnase principal",
+         "actif": true,
+         "dateCreation": "2025-08-08T01:30:00",
+         "dateModification": null
+       }
+     ]
+   }
+
+4. RÉCUPÉRER UN ÉVÉNEMENT PAR ID
+   -----------------------------
+   GET /events/{id}
+   Paramètre: id (Long) - Identifiant de l'événement
+   
+   Exemple: GET /events/1
+   
+   Réponse succès:
+   {
+     "success": true,
+     "message": "Événement récupéré avec succès",
+     "data": { ... }
+   }
+   
+   Réponse erreur (événement non trouvé):
+   {
+     "success": false,
+     "message": "Erreur lors de la récupération de l'événement: Événement non trouvé avec l'ID: 999"
+   }
+
+5. RÉCUPÉRER LES ÉVÉNEMENTS PAR TYPE
+   ---------------------------------
+   GET /events/type/{type}
+   Paramètre: type (EventType) - Type d'événement
+   
+   Exemples:
+   - GET /events/type/ENTRAINEMENT
+   - GET /events/type/MATCH
+   - GET /events/type/COMPETITION
+   - GET /events/type/REUNION
+   - GET /events/type/EVENEMENT
+   - GET /events/type/AUTRE
+
+6. RÉCUPÉRER LES ÉVÉNEMENTS À VENIR
+   --------------------------------
+   GET /events/upcoming
+   Description: Récupère tous les événements futurs (date_debut > maintenant)
+   
+   Réponse: Liste des événements à venir triés par date
+
+7. RÉCUPÉRER LES ÉVÉNEMENTS DU JOUR
+   --------------------------------
+   GET /events/today
+   Description: Récupère tous les événements du jour actuel
+   
+   Réponse: Liste des événements d'aujourd'hui
+
+8. SUPPRIMER UN ÉVÉNEMENT
+   ----------------------
+   DELETE /events/{id}
+   Paramètre: id (Long) - Identifiant de l'événement
+   
+   Exemple: DELETE /events/1
+   
+   Réponse succès:
+   {
+     "success": true,
+     "message": "Événement supprimé avec succès"
+   }
+   
+   Note: Suppression physique (hard delete) - l'événement est complètement 
+   supprimé de la base de données.
+
+🔧 LOGIQUE MÉTIER
+================================================================================
+
+1. CRÉATION D'ÉVÉNEMENTS
+   ---------------------
+   - Validation des champs obligatoires (titre, dateDebut, dateFin, type)
+   - Vérification que dateDebut < dateFin
+   - Attribution automatique de actif=true et dateCreation=now()
+   - Sauvegarde en base de données
+   - Retour de l'événement créé avec son ID
+
+2. CONSULTATION D'ÉVÉNEMENTS
+   -------------------------
+   - getAllEvents(): Retourne uniquement les événements actifs (actif=true)
+   - getEventById(): Vérifie l'existence et le statut actif
+   - getEventsByType(): Filtre par type ET statut actif
+   - getUpcomingEvents(): Filtre par date future ET statut actif
+   - getTodayEvents(): Filtre par date du jour ET statut actif
+
+3. SUPPRESSION D'ÉVÉNEMENTS
+   ------------------------
+   - Vérification de l'existence de l'événement
+   - Suppression physique complète de la base de données
+   - Pas de soft delete (contrairement à la version initiale)
+
+4. GESTION DES ERREURS
+   -------------------
+   - Événement non trouvé: RuntimeException avec message explicite
+   - Validation échouée: Retour d'erreur avec détails
+   - Erreurs base de données: Gestion automatique par Spring
+
+🛠️ CONFIGURATION
+================================================================================
+
+Application Properties (application.yml):
+- Port: 8082
+- Context-path: /api/planning
+- Base de données: PostgreSQL sur localhost:5432
+- Database: planning_db
+- User: planning_user
+- Password: root
+- JPA: Hibernate avec DDL auto=none
+- Initialisation SQL: schema.sql
+
+Sécurité:
+- Spring Security configuré pour permettre l'accès libre
+- CSRF désactivé
+- Sessions stateless
+- Authentification désactivée (développement)
+
+Docker:
+- Image base: openjdk:21-jdk-slim
+- Port exposé: 8082
+- Variables d'environnement pour PostgreSQL
+- Docker Compose avec PostgreSQL 15
+
+📋 DONNÉES DE TEST
+================================================================================
+
+Le fichier schema.sql insère automatiquement 2 événements de test:
+
+1. Événement 1:
+   - Titre: "Entraînement technique"
+   - Description: "Entraînement focalisé sur les techniques de base"
+   - Type: ENTRAINEMENT
+   - Lieu: "Gymnase principal"
+   - Date: Demain +2h
+
+2. Événement 2:
+   - Titre: "Match amical"
+   - Description: "Match amical contre l'équipe locale"
+   - Type: MATCH
+   - Lieu: "Salle de sport municipale"
+   - Date: Dans 3 jours +3h
+
+🧪 TESTS POSTMAN
+================================================================================
+
+Collection de tests recommandée:
+
+1. Health Check - Vérifier que le service fonctionne
+2. GET /events - Voir les événements de test
+3. POST /events - Créer un nouvel événement
+4. GET /events/{id} - Récupérer l'événement créé
+5. GET /events/type/ENTRAINEMENT - Filtrer par type
+6. GET /events/upcoming - Événements futurs
+7. GET /events/today - Événements du jour
+8. DELETE /events/{id} - Supprimer un événement
+9. GET /events - Vérifier que l'événement est supprimé
+
+🚀 DÉPLOIEMENT
+================================================================================
+
+Local (sans Docker):
+1. Démarrer PostgreSQL
+2. Créer la base planning_db et l'utilisateur planning_user
+3. Exécuter schema.sql
+4. mvn clean install
+5. java -jar target/planning-service-1.0.0.jar
+
+Docker:
+1. docker-compose up --build -d
+2. Le service sera accessible sur http://localhost:8082
+
+Arrêt Docker:
+- docker-compose down
+
+💡 EXEMPLES D'UTILISATION PRATIQUES
+================================================================================
+
+1. SCÉNARIO: PLANIFIER UN ENTRAÎNEMENT HEBDOMADAIRE
+   ------------------------------------------------
+   
+   Étape 1: Créer l'entraînement
+   POST /api/planning/events
+   {
+     "titre": "Entraînement Technique - Semaine 1",
+     "description": "Travail sur les services et réceptions",
+     "dateDebut": "2025-08-12T18:00:00",
+     "dateFin": "2025-08-12T20:00:00",
+     "type": "ENTRAINEMENT",
+     "lieu": "Gymnase Municipal - Terrain A"
+   }
+   
+   Étape 2: Vérifier la création
+   GET /api/planning/events/upcoming
+   → Doit afficher le nouvel entraînement
+
+2. SCÉNARIO: ORGANISER UN MATCH DE CHAMPIONNAT
+   -------------------------------------------
+   
+   Étape 1: Créer le match
+   POST /api/planning/events
+   {
+     "titre": "Match Championnat vs Étoile Sportive",
+     "description": "Match de championnat régional - Phase aller",
+     "dateDebut": "2025-08-15T15:00:00",
+     "dateFin": "2025-08-15T17:30:00",
+     "type": "MATCH",
+     "lieu": "Complexe Sportif Central"
+   }
+   
+   Étape 2: Consulter tous les matchs
+   GET /api/planning/events/type/MATCH
+   → Affiche tous les matchs programmés
+
+3. SCÉNARIO: PLANIFIER UNE COMPÉTITION
+   ------------------------------------
+   
+   Étape 1: Créer l'événement compétition
+   POST /api/planning/events
+   {
+     "titre": "Tournoi Inter-Clubs 2025",
+     "description": "Participation au tournoi régional inter-clubs",
+     "dateDebut": "2025-08-20T08:00:00",
+     "dateFin": "2025-08-20T18:00:00",
+     "type": "COMPETITION",
+     "lieu": "Centre Sportif Régional"
+   }
+   
+   Étape 2: Vérifier les événements du jour
+   GET /api/planning/events/today (le 20/08/2025)
+   → Affiche la compétition si exécuté le jour J
+
+4. SCÉNARIO: ORGANISER UNE RÉUNION D'ÉQUIPE
+   ----------------------------------------
+   
+   POST /api/planning/events
+   {
+     "titre": "Réunion Stratégie Saison",
+     "description": "Discussion sur les objectifs et la stratégie pour la nouvelle saison",
+     "dateDebut": "2025-08-10T19:00:00",
+     "dateFin": "2025-08-10T21:00:00",
+     "type": "REUNION",
+     "lieu": "Salle de réunion - Club House"
+   }
+
+5. SCÉNARIO: ANNULER UN ÉVÉNEMENT (SUPPRESSION)
+   ---------------------------------------------
+   
+   Étape 1: Identifier l'événement à supprimer
+   GET /api/planning/events
+   → Noter l'ID de l'événement à annuler
+   
+   Étape 2: Supprimer l'événement
+   DELETE /api/planning/events/3
+   → Réponse: "Événement supprimé avec succès"
+   
+   Étape 3: Vérifier la suppression
+   GET /api/planning/events
+   → L'événement ne doit plus apparaître
+
+6. SCÉNARIO: CONSULTER LE PLANNING DE LA SEMAINE
+   ----------------------------------------------
+   
+   Étape 1: Voir tous les événements à venir
+   GET /api/planning/events/upcoming
+   → Affiche tous les événements futurs triés par date
+   
+   Étape 2: Filtrer par type d'activité
+   GET /api/planning/events/type/ENTRAINEMENT
+   → Affiche uniquement les entraînements
+   
+   GET /api/planning/events/type/MATCH
+   → Affiche uniquement les matchs
+
+7. SCÉNARIO: VÉRIFICATION QUOTIDIENNE
+   ----------------------------------
+   
+   Chaque matin, consulter les événements du jour:
+   GET /api/planning/events/today
+   
+   Exemple de réponse:
+   {
+     "success": true,
+     "message": "Événements du jour récupérés avec succès",
+     "data": [
+       {
+         "id": 5,
+         "titre": "Entraînement Technique",
+         "dateDebut": "2025-08-08T18:00:00",
+         "dateFin": "2025-08-08T20:00:00",
+         "type": "ENTRAINEMENT",
+         "lieu": "Gymnase Municipal"
+       }
+     ]
+   }
+
+8. SCÉNARIO: GESTION D'ERREURS COURANTES
+   -------------------------------------
+   
+   Erreur 1: Événement non trouvé
+   GET /api/planning/events/999
+   Réponse:
+   {
+     "success": false,
+     "message": "Erreur lors de la récupération de l'événement: Événement non trouvé avec l'ID: 999"
+   }
+   
+   Erreur 2: Données manquantes lors de la création
+   POST /api/planning/events
+   {
+     "titre": "Test"
+     // dateDebut et dateFin manquantes
+   }
+   Réponse: Erreur de validation avec détails des champs manquants
+
+9. SCÉNARIO: WORKFLOW COMPLET D'UNE JOURNÉE TYPE
+   ----------------------------------------------
+   
+   Matin (9h00):
+   1. GET /api/planning/health → Vérifier que le service fonctionne
+   2. GET /api/planning/events/today → Voir les événements du jour
+   3. GET /api/planning/events/upcoming → Planifier les prochains jours
+   
+   Après-midi (14h00):
+   4. POST /api/planning/events → Créer un nouvel entraînement
+   5. GET /api/planning/events/type/ENTRAINEMENT → Vérifier tous les entraînements
+   
+   Soir (20h00):
+   6. GET /api/planning/events → Consulter le planning complet
+   7. DELETE /api/planning/events/X → Annuler un événement si nécessaire
+
+10. SCÉNARIO: INTÉGRATION AVEC D'AUTRES SERVICES
+    ---------------------------------------------
+    
+    Le planning-service peut être intégré avec d'autres microservices:
+    
+    - Service de notification: Envoyer des rappels avant les événements
+    - Service de gestion des joueurs: Associer les joueurs aux événements
+    - Service de statistiques: Analyser la fréquence des entraînements
+    
+    Exemple d'intégration:
+    1. GET /api/planning/events/upcoming → Récupérer les prochains événements
+    2. Pour chaque événement, appeler le service de notification
+    3. Envoyer des rappels aux joueurs concernés
+
+🔄 EXEMPLES DE TESTS AUTOMATISÉS
+================================================================================
+
+Test 1: Cycle de vie complet d'un événement
+1. POST /events → Créer
+2. GET /events/{id} → Vérifier création
+3. GET /events → Vérifier dans la liste
+4. DELETE /events/{id} → Supprimer
+5. GET /events/{id} → Vérifier suppression (doit échouer)
+
+Test 2: Validation des types d'événements
+1. POST /events avec type="ENTRAINEMENT" → Succès
+2. POST /events avec type="MATCH" → Succès
+3. POST /events avec type="INVALID" → Échec
+
+Test 3: Filtrage par date
+1. Créer événement hier → POST /events
+2. Créer événement aujourd'hui → POST /events
+3. Créer événement demain → POST /events
+4. GET /events/today → Doit retourner seulement aujourd'hui
+5. GET /events/upcoming → Doit retourner aujourd'hui + demain
+
+📱 EXEMPLES D'UTILISATION MOBILE/WEB
+================================================================================
+
+Interface Web - Dashboard Coach:
+- Affichage calendrier avec GET /events/upcoming
+- Formulaire création événement avec POST /events
+- Boutons de suppression avec DELETE /events/{id}
+
+Application Mobile - Joueurs:
+- Notification push basée sur GET /events/today
+- Liste des prochains entraînements avec GET /events/type/ENTRAINEMENT
+- Détails d'un match avec GET /events/{id}
+
+Tableau de Bord Administrateur:
+- Statistiques avec GET /events (compter par type)
+- Planning hebdomadaire avec GET /events/upcoming
+- Gestion des événements avec tous les endpoints CRUD
+
+📝 NOTES IMPORTANTES
+================================================================================
+
+- Le service utilise une suppression physique (hard delete)
+- Tous les endpoints retournent un format JSON standardisé
+- La sécurité est désactivée pour le développement
+- Les dates doivent être au format ISO 8601 (YYYY-MM-DDTHH:mm:ss)
+- Le service gère automatiquement les fuseaux horaires
+- Les événements inactifs ne sont pas retournés par les endpoints de consultation
+- Tous les exemples utilisent des données réalistes pour une équipe de volleyball
+- Les horaires respectent les créneaux typiques d'entraînement (18h-20h)
+- Les lieux sont adaptés à la pratique du volleyball
+
+================================================================================
+                            FIN DE DOCUMENTATION
+================================================================================

@@ -1,0 +1,342 @@
+# Admin-Request-Service - Documentation Complète
+
+## 📋 Vue d'ensemble
+
+Le **admin-request-service** est un microservice Spring Boot dédié à la gestion des demandes administratives pour une équipe de volleyball. Il permet la création, validation, suivi et traitement de différents types de demandes administratives.
+
+## 🏗️ Architecture Technique
+
+### Technologies Utilisées
+- **Framework**: Spring Boot 3.2.0
+- **Langage**: Java 17
+- **Base de données**: PostgreSQL 15
+- **ORM**: Spring Data JPA / Hibernate
+- **Sécurité**: Spring Security (configuration permissive pour développement)
+- **Port**: 8085
+- **Conteneurisation**: Docker & Docker Compose
+
+### Structure du Projet
+```
+admin-request-service/
+├── src/main/java/com/volleyball/adminrequestservice/
+│   ├── AdminRequestServiceApplication.java
+│   ├── model/
+│   │   ├── AdminRequest.java
+│   │   ├── RequestType.java
+│   │   ├── RequestStatus.java
+│   │   └── RequestPriority.java
+│   ├── repository/
+│   │   └── AdminRequestRepository.java
+│   ├── service/
+│   │   └── AdminRequestService.java
+│   ├── controller/
+│   │   └── AdminRequestController.java
+│   └── config/
+│       └── SecurityConfig.java
+├── src/main/resources/
+│   └── application.yml
+├── Dockerfile
+├── docker-compose.yml
+└── pom.xml
+```
+
+## 📊 Modèle de Données
+
+### Entité AdminRequest
+- **id**: Identifiant unique (Long)
+- **requesterId**: ID du demandeur (Long)
+- **title**: Titre de la demande (String, max 200 caractères)
+- **description**: Description détaillée (String, max 2000 caractères)
+- **type**: Type de demande (RequestType enum)
+- **priority**: Priorité (RequestPriority enum)
+- **status**: Statut (RequestStatus enum)
+- **assignedTo**: ID de l'assigné (Long, optionnel)
+- **budgetRequested**: Budget demandé (Double, optionnel)
+- **dateNeeded**: Date limite (LocalDateTime, optionnel)
+- **adminComments**: Commentaires admin (String, max 1000 caractères)
+- **rejectionReason**: Raison du rejet (String, max 500 caractères)
+- **createdAt**: Date de création (LocalDateTime)
+- **updatedAt**: Date de mise à jour (LocalDateTime)
+- **processedAt**: Date de traitement (LocalDateTime)
+- **approvedAt**: Date d'approbation (LocalDateTime)
+- **approvedBy**: ID de l'approbateur (Long)
+
+### Énumérations
+
+#### RequestType
+- `CONGE`: Demande de congé
+- `ABSENCE`: Justification d'absence
+- `MATERIEL`: Demande de matériel
+- `TRANSPORT`: Demande de transport
+- `HEBERGEMENT`: Demande d'hébergement
+- `BUDGET`: Demande budgétaire
+- `FORMATION`: Demande de formation
+- `EVENEMENT`: Organisation d'événement
+- `PARTENARIAT`: Demande de partenariat
+- `AUTRE`: Autre demande
+
+#### RequestStatus
+- `BROUILLON`: Brouillon
+- `SOUMISE`: Soumise
+- `EN_COURS`: En cours de traitement
+- `EN_ATTENTE`: En attente d'informations
+- `APPROUVEE`: Approuvée
+- `REJETEE`: Rejetée
+- `ANNULEE`: Annulée
+- `TERMINEE`: Terminée
+
+#### RequestPriority
+- `BASSE`: Priorité basse
+- `NORMALE`: Priorité normale
+- `HAUTE`: Priorité haute
+- `URGENTE`: Priorité urgente
+- `CRITIQUE`: Priorité critique
+
+## 🔌 API Endpoints
+
+### Base URL: `http://localhost:8085/api/admin-requests`
+
+### CRUD Operations
+
+#### 1. Créer une demande
+- **POST** `/api/admin-requests`
+- **Body**: AdminRequest JSON
+- **Retour**: AdminRequest créée (201)
+
+#### 2. Récupérer toutes les demandes
+- **GET** `/api/admin-requests`
+- **Retour**: Liste des demandes (200)
+
+#### 3. Récupérer une demande par ID
+- **GET** `/api/admin-requests/by-id?id={id}`
+- **Retour**: AdminRequest (200) ou Not Found (404)
+
+#### 4. Mettre à jour une demande
+- **PUT** `/api/admin-requests/update?id={id}`
+- **Body**: AdminRequest JSON
+- **Retour**: AdminRequest mise à jour (200)
+
+#### 5. Supprimer une demande
+- **DELETE** `/api/admin-requests/delete?id={id}`
+- **Retour**: Message de confirmation (200)
+
+### Endpoints de Filtrage
+
+#### 6. Demandes par demandeur
+- **GET** `/api/admin-requests/requester?requesterId={id}`
+
+#### 7. Demandes par statut
+- **GET** `/api/admin-requests/by-status?status={status}`
+
+#### 8. Demandes par type
+- **GET** `/api/admin-requests/by-type?type={type}`
+
+#### 9. Demandes par priorité
+- **GET** `/api/admin-requests/by-priority?priority={priority}`
+
+#### 10. Demandes assignées
+- **GET** `/api/admin-requests/assigned?assignedTo={id}`
+
+### Endpoints Spécialisés
+
+#### 11. Demandes en attente
+- **GET** `/api/admin-requests/pending`
+
+#### 12. Demandes urgentes
+- **GET** `/api/admin-requests/urgent`
+
+#### 13. Demandes récentes
+- **GET** `/api/admin-requests/recent?days={days}`
+
+#### 14. Recherche de demandes
+- **GET** `/api/admin-requests/search?searchTerm={term}`
+
+#### 15. Demandes avec budget
+- **GET** `/api/admin-requests/with-budget`
+
+#### 16. Demandes prioritaires assignées
+- **GET** `/api/admin-requests/high-priority-assigned?assignedTo={id}`
+
+### Actions sur les Demandes
+
+#### 17. Soumettre une demande
+- **PUT** `/api/admin-requests/submit?id={id}`
+
+#### 18. Assigner une demande
+- **PUT** `/api/admin-requests/assign?id={id}&assignedTo={userId}`
+
+#### 19. Approuver une demande
+- **PUT** `/api/admin-requests/approve?id={id}&approvedBy={userId}&comments={comments}`
+
+#### 20. Rejeter une demande
+- **PUT** `/api/admin-requests/reject?id={id}&reason={reason}&rejectedBy={userId}`
+
+#### 21. Annuler une demande
+- **PUT** `/api/admin-requests/cancel?id={id}`
+
+#### 22. Marquer comme terminée
+- **PUT** `/api/admin-requests/complete?id={id}`
+
+### Analytics et Statistiques
+
+#### 23. Statistiques complètes
+- **GET** `/api/admin-requests/statistics`
+- **Retour**: Statistiques par statut, type, priorité, budget, temps de traitement
+
+#### 24. Compteurs du tableau de bord
+- **GET** `/api/admin-requests/dashboard`
+- **Retour**: Compteurs des demandes en attente, urgentes, approuvées, rejetées
+
+#### 25. Compter par statut pour un demandeur
+- **GET** `/api/admin-requests/count?requesterId={id}&status={status}`
+
+## 📋 Exemples de Requêtes
+
+### Créer une demande de congé
+```json
+POST /api/admin-requests
+{
+    "requesterId": 1,
+    "title": "Demande de congé été 2024",
+    "description": "Demande de congé pour les vacances d'été du 15 juillet au 30 août 2024",
+    "type": "CONGE",
+    "priority": "NORMALE",
+    "dateNeeded": "2024-07-15T00:00:00"
+}
+```
+
+### Créer une demande de matériel urgente
+```json
+POST /api/admin-requests
+{
+    "requesterId": 2,
+    "title": "Achat ballons de volleyball",
+    "description": "Besoin urgent de 20 ballons de volleyball pour l'entraînement",
+    "type": "MATERIEL",
+    "priority": "URGENTE",
+    "budgetRequested": 500.00,
+    "dateNeeded": "2024-08-20T00:00:00"
+}
+```
+
+### Approuver une demande
+```
+PUT /api/admin-requests/approve?id=1&approvedBy=3&comments=Demande approuvée, budget alloué
+```
+
+### Rechercher des demandes
+```
+GET /api/admin-requests/search?searchTerm=ballon
+```
+
+## 🚀 Déploiement
+
+### Avec Docker Compose
+```bash
+# Construire et démarrer les services
+docker-compose up --build -d
+
+# Vérifier le statut
+docker ps
+
+# Voir les logs
+docker-compose logs admin-request-service
+```
+
+### Configuration Base de Données
+- **Host**: localhost
+- **Port**: 5435 (PostgreSQL dans Docker)
+- **Database**: admin_request_db
+- **User**: admin_request_user
+- **Password**: root
+
+### Ports
+- **Application**: 8085
+- **PostgreSQL**: 5435
+
+## 🧪 Tests
+
+### Test de santé du service
+```bash
+curl http://localhost:8085/api/admin-requests
+```
+
+### Test de création de demande
+```bash
+curl -X POST http://localhost:8085/api/admin-requests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requesterId": 1,
+    "title": "Test Request",
+    "description": "Test Description",
+    "type": "AUTRE",
+    "priority": "NORMALE"
+  }'
+```
+
+## 🔧 Configuration
+
+### Variables d'environnement
+- `DATABASE_URL`: URL de la base de données
+- `DATABASE_USERNAME`: Nom d'utilisateur DB
+- `DATABASE_PASSWORD`: Mot de passe DB
+- `SPRING_JPA_HIBERNATE_DDL_AUTO`: Mode DDL (create-drop, update, etc.)
+- `LOG_LEVEL`: Niveau de logging
+
+### Profils Spring
+- **Développement**: Configuration par défaut avec DDL create-drop
+- **Production**: Recommandé d'utiliser DDL validate ou update
+
+## 📊 Monitoring
+
+### Endpoints de santé
+- **Health Check**: `/actuator/health`
+- **Info**: `/actuator/info`
+- **Metrics**: `/actuator/metrics`
+
+## 🔒 Sécurité
+
+### Configuration actuelle
+- **Authentification**: Désactivée (développement)
+- **CORS**: Activé pour toutes les origines
+- **CSRF**: Désactivé
+- **Headers de sécurité**: Configurés (HSTS, X-Content-Type-Options, etc.)
+
+### Recommandations pour la production
+1. Activer l'authentification JWT
+2. Configurer CORS spécifiquement
+3. Activer CSRF si nécessaire
+4. Implémenter l'autorisation basée sur les rôles
+
+## 🚨 Dépannage
+
+### Problèmes courants
+1. **Port 8085 occupé**: Arrêter le processus ou changer le port
+2. **Connexion DB échouée**: Vérifier PostgreSQL et les credentials
+3. **Erreurs de validation**: Vérifier les champs requis dans les requêtes JSON
+
+### Logs utiles
+```bash
+# Logs du service
+docker-compose logs admin-request-service
+
+# Logs de la base de données
+docker-compose logs postgres
+```
+
+## 📈 Évolutions Futures
+
+### Fonctionnalités à ajouter
+1. **Notifications**: Intégration avec le messaging-service
+2. **Workflow**: Étapes de validation personnalisables
+3. **Documents**: Gestion des pièces jointes
+4. **Historique**: Audit trail des modifications
+5. **Rapports**: Génération de rapports PDF
+6. **API Gateway**: Intégration dans une architecture microservices
+
+---
+
+**Version**: 1.0.0  
+**Date**: Août 2024  
+**Auteur**: Équipe de développement volleyball  
+**Contact**: admin@volleyball-team.com

@@ -1,0 +1,253 @@
+DOCUMENTATION — medical-service (Nouvelle version simplifiée)
+
+Aperçu
+- Application: Spring Boot 3.2.0, Java 17
+- Base de données: PostgreSQL 15 (local)
+- Port application: 8086
+- Base URL: http://localhost:8086/api/medical
+- Discovery/Gateway: désactivés (accès direct)
+- Schéma simplifié: health_records, medical_rendezvous
+- Supprimé: medical_reports (et tout le code associé)
+
+Schéma SQL (référence)
+- Fichier: src/main/resources/create_tables.sql
+
+health_records
+- id (PK), player_id (BIGINT, NOT NULL), player_name (VARCHAR(100), NOT NULL)
+- blessure_type (VARCHAR(50), NULL), blessure_date (DATE, NULL), traitement (TEXT, NULL)
+- status (VARCHAR(32), NOT NULL), last_medical_checkup (DATE, NULL), next_checkup_due (DATE, NULL)
+- created_at (TIMESTAMP, NOT NULL), updated_at (TIMESTAMP, NULL)
+
+medical_rendezvous
+- id (PK), player_id (BIGINT, NOT NULL), player_name (VARCHAR(100), NOT NULL)
+- rendezvous_datetime (TIMESTAMP, NOT NULL), kine_name (VARCHAR(100), NULL), lieu (VARCHAR(200), NULL)
+- priority (VARCHAR(32), NULL), notes (TEXT, NULL), status (VARCHAR(32), NULL)
+- created_at (TIMESTAMP, NOT NULL), updated_at (TIMESTAMP, NULL)
+
+Modèles (Entités)
+- HealthRecord
+  Champs: playerId, playerName, blessureType, blessureDate, traitement, status,
+          lastMedicalCheckup, nextCheckupDue, createdAt, updatedAt
+  Enum: HealthStatus (ACTIVE, INJURED, RECOVERING, RESTRICTED, ...)
+  Remarque: anciens champs supprimés (sang, allergies, chroniques, médicaments, contact urgence, notes)
+
+- MedicalRendezvous (nouveau à implémenter)
+  Champs: playerId, playerName, rendezvousDatetime, kineName, lieu, priority, notes, status,
+          createdAt, updatedAt
+  Priority: réutiliser AppointmentPriority ou String
+  Status: SCHEDULED/CONFIRMED/CANCELLED/COMPLETED/RESCHEDULED (recommandé)
+
+Règles Métier
+- HealthRecord
+  * playerId, playerName, status obligatoires (status par défaut: ACTIVE)
+  * blessureType/blessureDate/traitement optionnels
+  * "À contrôler" si nextCheckupDue <= date du jour
+  * Statistiques: total + par statut + joueurs à contrôler
+
+- MedicalRendezvous
+  * playerId, playerName, rendezvousDatetime obligatoires
+  * kineName/lieu facultatifs
+  * priority/status recommandés
+  * Actions: confirmer, annuler, terminer, replanifier (met à jour rendezvousDatetime + status)
+
+API Endpoints (FR)
+Base: /api/medical
+
+Dossiers de santé: /dossiers-sante
+- GET  /dossiers-sante                      : liste
+- POST /dossiers-sante                      : créer
+- GET  /dossiers-sante/{id}                 : détail
+- PUT  /dossiers-sante/{id}                 : mise à jour
+- DELETE /dossiers-sante/{id}               : supprimer
+- GET  /dossiers-sante/joueurs/{playerId}   : par joueur
+- GET  /dossiers-sante/statut/{status}      : par statut
+- GET  /dossiers-sante/recherche?name=term  : recherche par nom
+- GET  /dossiers-sante/a-controler          : nextCheckupDue <= aujourd’hui
+- GET  /dossiers-sante/statistiques         : stats (totaux, par statut, à contrôler)
+
+Rendez-vous: /rendezvous
+- GET  /rendezvous                          : liste
+- POST /rendezvous                          : créer
+- GET  /rendezvous/{id}                     : détail
+- PUT  /rendezvous/{id}                     : mise à jour
+- DELETE /rendezvous/{id}                   : supprimer
+- GET  /rendezvous/joueur/{playerId}        : par joueur
+- GET  /rendezvous/aujourdhui               : rendez-vous du jour
+- GET  /rendezvous/prochains                : à venir (> maintenant)
+- GET  /rendezvous/kine?kineName=...        : par kiné
+- GET  /rendezvous/recherche?name=term      : recherche par nom de joueur
+- PUT  /rendezvous/{id}/confirmer           : status=CONFIRMED
+- PUT  /rendezvous/{id}/annuler             : status=CANCELLED
+- PUT  /rendezvous/{id}/terminer            : status=COMPLETED
+- PUT  /rendezvous/{id}/replanifier?datetime=YYYY-MM-DDTHH:mm:ss
+- GET  /rendezvous/statistiques             : stats (totaux, today, upcoming, par statut)
+
+Exemples de Payload (JSON)
+- POST /dossiers-sante
+{
+  "playerId": 12,
+  "playerName": "Ali Ben Salah",
+  "blessureType": "Entorse",
+  "blessureDate": "2025-08-01",
+  "traitement": "Repos + glace",
+  "status": "ACTIVE",
+  "lastMedicalCheckup": "2025-07-01",
+  "nextCheckupDue": "2025-09-01"
+}
+
+- POST /rendezvous
+{
+  "playerId": 12,
+  "playerName": "Ali Ben Salah",
+  "rendezvousDatetime": "2025-08-15T10:30:00",
+  "kineName": "M. Kacem",
+  "lieu": "Centre Kiné Lac 1",
+  "priority": "HIGH",
+  "status": "SCHEDULED",
+  "notes": "Évaluation post-entorse"
+}
+
+cURL rapides
+- Créer dossier de santé:
+  curl -X POST http://localhost:8086/api/medical/dossiers-sante \
+    -H "Content-Type: application/json" \
+    -d '{"playerId":12,"playerName":"Ali Ben Salah","blessureType":"Entorse","blessureDate":"2025-08-01","traitement":"Repos + glace","status":"ACTIVE"}'
+
+- Lister rendez-vous à venir:
+  curl http://localhost:8086/api/medical/rendezvous/prochains
+
+- Replanifier rendez-vous:
+  curl -X PUT "http://localhost:8086/api/medical/rendezvous/10/replanifier?datetime=2025-08-20T11:00:00"
+
+Guide Tests Postman
+- Environnement: baseUrl = http://localhost:8086/api/medical
+- Dossiers de Santé: POST/GET/GET{id}/PUT{id}/a-controler/statistiques
+- Rendez-vous: POST/GET/GET{id}/PUT{id}/actions statut/replanifier/statistiques
+- Vérifications: status HTTP, présence des champs clés, enchaînement création->lecture->maj->action->stats
+
+Détails Postman (prêts à copier)
+
+Environnement (variables):
+- baseUrl = http://localhost:8086/api/medical
+
+Headers communs:
+- Content-Type: application/json
+
+1) Dossiers de santé — /dossiers-sante
+- Créer (POST {{baseUrl}}/dossiers-sante)
+  Body:
+  {
+    "playerId": 12,
+    "playerName": "Ali Ben Salah",
+    "blessureType": "Entorse",
+    "blessureDate": "2025-08-01",
+    "traitement": "Repos + glace",
+    "status": "ACTIVE",
+    "lastMedicalCheckup": "2025-07-01",
+    "nextCheckupDue": "2025-09-01"
+  }
+  Expect: 201 Created, objet retourné avec id
+
+- Lister (GET {{baseUrl}}/dossiers-sante)
+  Expect: 200 OK, liste JSON
+
+- Détail par id (GET {{baseUrl}}/dossiers-sante/{{id}})
+  Expect: 200 OK ou 404
+
+- Par joueur (GET {{baseUrl}}/dossiers-sante/joueurs/{{playerId}})
+  Expect: 200 OK (objet) ou 404
+
+- Par statut (GET {{baseUrl}}/dossiers-sante/statut/ACTIVE)
+  Expect: 200 OK, liste
+
+- Recherche par nom (GET {{baseUrl}}/dossiers-sante/recherche?name=Ali)
+  Expect: 200 OK, liste
+
+- À contrôler (GET {{baseUrl}}/dossiers-sante/a-controler)
+  Expect: 200 OK, liste
+
+- Statistiques (GET {{baseUrl}}/dossiers-sante/statistiques)
+  Expect: 200 OK, JSON avec totaux/par statut/à contrôler
+
+- Mettre à jour (PUT {{baseUrl}}/dossiers-sante/{{id}})
+  Body: (reprendre le JSON de création en modifiant les champs)
+  Expect: 200 OK
+
+- Supprimer (DELETE {{baseUrl}}/dossiers-sante/{{id}})
+  Expect: 204 No Content
+
+- Mettre à jour le statut (PUT {{baseUrl}}/dossiers-sante/{{id}}/status?status=INJURED)
+  Expect: 200 OK
+
+- Programmer prochain contrôle (PUT {{baseUrl}}/dossiers-sante/{{id}}/programmer-controle?nextCheckupDate=2025-09-10)
+  Expect: 200 OK
+
+2) Rendez-vous — /rendezvous
+- Créer (POST {{baseUrl}}/rendezvous)
+  Body:
+  {
+    "playerId": 12,
+    "playerName": "Ali Ben Salah",
+    "rendezvousDatetime": "2025-08-15T10:30:00",
+    "kineName": "M. Kacem",
+    "lieu": "Centre Kiné Lac 1",
+    "priority": "HIGH",
+    "status": "SCHEDULED",
+    "notes": "Évaluation post-entorse"
+  }
+  Expect: 201 Created, objet avec id
+
+- Lister (GET {{baseUrl}}/rendezvous)
+  Expect: 200 OK, liste
+
+- Détail par id (GET {{baseUrl}}/rendezvous/{{id}})
+  Expect: 200 OK ou 404
+
+- Mettre à jour (PUT {{baseUrl}}/rendezvous/{{id}})
+  Body: (même structure que création, avec nouvelles valeurs)
+  Expect: 200 OK
+
+- Supprimer (DELETE {{baseUrl}}/rendezvous/{{id}})
+  Expect: 204 No Content
+
+- Par joueur (GET {{baseUrl}}/rendezvous/joueur/{{playerId}})
+  Expect: 200 OK, liste ordonnée par date desc
+
+- Aujourd’hui (GET {{baseUrl}}/rendezvous/aujourdhui)
+  Expect: 200 OK, liste
+
+- Prochains (GET {{baseUrl}}/rendezvous/prochains)
+  Expect: 200 OK, liste > now
+
+- Par kiné (GET {{baseUrl}}/rendezvous/kine?kineName=Kacem)
+  Expect: 200 OK, liste
+
+- Recherche nom joueur (GET {{baseUrl}}/rendezvous/recherche?name=Ali)
+  Expect: 200 OK, liste
+
+- Confirmer (PUT {{baseUrl}}/rendezvous/{{id}}/confirmer)
+  Expect: 200 OK, status=CONFIRMED
+
+- Annuler (PUT {{baseUrl}}/rendezvous/{{id}}/annuler)
+  Expect: 200 OK, status=CANCELLED
+
+- Terminer (PUT {{baseUrl}}/rendezvous/{{id}}/terminer)
+  Expect: 200 OK, status=COMPLETED
+
+- Replanifier (PUT {{baseUrl}}/rendezvous/{{id}}/replanifier?datetime=2025-08-20T11:00:00)
+  Expect: 200 OK, nouveau rendezvousDatetime
+
+Notes:
+- Format datetime attendu: yyyy-MM-dd'T'HH:mm:ss
+- Champs requis pour rendez-vous: playerId, playerName, rendezvousDatetime
+- Toujours envoyer Content-Type: application/json pour POST/PUT
+
+Démarrage Local
+- DB PostgreSQL locale prête et tables créées (create_tables.sql)
+- Build: mvn clean package -DskipTests
+- Run : java -jar target/medical-service-1.0.0.jar
+
+État d’implémentation (au moment du document)
+- HealthRecord: entité + repo + service alignés avec le nouveau schéma, contrôleur sur `/api/medical/dossiers-sante`
+- MedicalRendezvous: entité + repo + service + contrôleur implémentés avec endpoints FR sur `/api/medical/rendezvous`
+- Legacy neutralisé: MedicalAppointment* et MedicalReport* (entités, repositories, services, contrôleurs) désactivés

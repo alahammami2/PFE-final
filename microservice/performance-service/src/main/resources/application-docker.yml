@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: performance-service
+  
+  # Configuration de la base de données PostgreSQL pour Docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/performance_db
+    username: performance_user
+    password: root
+    driver-class-name: org.postgresql.Driver
+    
+  # Configuration JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    defer-datasource-initialization: false
+    
+  # Initialisation des données
+  sql:
+    init:
+      mode: never # Les données sont initialisées via Docker
+
+# Configuration du serveur
+server:
+  port: 8083
+  servlet:
+    context-path: /api/performance
+
+# Configuration des logs
+logging:
+  level:
+    com.volleyball.performanceservice: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Configuration de sécurité
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

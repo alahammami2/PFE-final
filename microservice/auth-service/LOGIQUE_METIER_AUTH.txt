@@ -1,0 +1,1181 @@
+================================================================================
+                    EXEMPLES D'UTILISATION - SERVICE AUTH
+                         Plateforme Volley-ball COK
+================================================================================
+
+📋 TABLE DES MATIÈRES
+================================================================================
+1. Exemples d'appels API
+2. Scénarios d'utilisation
+3. Intégration avec autres services
+4. Tests et validation
+5. Codes d'erreur détaillés
+6. Bonnes pratiques
+
+================================================================================
+1. EXEMPLES D'APPELS API
+================================================================================
+
+🔐 CONNEXION UTILISATEUR :
+
+REQUEST :
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@cok.tn",
+    "motDePasse": "password123"
+}
+
+RESPONSE SUCCÈS (200) :
+{
+    "success": true,
+    "message": "Connexion réussie",
+    "data": {
+        "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjb2sudG4iLCJ1c2VySWQiOjEsInJvbGUiOiJBRE1JTiIsIm5vbSI6IkFkbWluIiwicHJlbm9tIjoiU3lzdGVtIiwiaWF0IjoxNjkxMjM0NTY3LCJleHAiOjE2OTEzMjA5Njd9.signature",
+        "user": {
+            "id": 1,
+            "nom": "Admin",
+            "prenom": "System",
+            "email": "admin@cok.tn",
+            "role": "ADMIN",
+            "actif": true,
+            "dateCreation": "2025-08-07T10:30:00Z"
+        }
+    }
+}
+
+RESPONSE ÉCHEC (401) :
+{
+    "success": false,
+    "message": "Email ou mot de passe incorrect",
+    "data": null
+}
+
+================================================================================
+
+👤 CRÉATION UTILISATEUR (ADMIN SEULEMENT) :
+
+REQUEST :
+POST http://localhost:8081/api/auth/create-user
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+{
+    "nom": "Nouveau",
+    "prenom": "Joueur",
+    "email": "nouveau.joueur@cok.tn",
+    "motDePasse": "motdepasse123",
+    "role": "JOUEUR"
+}
+
+RESPONSE SUCCÈS (201) :
+{
+    "success": true,
+    "message": "Utilisateur créé avec succès",
+    "data": {
+        "id": 6,
+        "nom": "Nouveau",
+        "prenom": "Joueur",
+        "email": "nouveau.joueur@cok.tn",
+        "role": "JOUEUR",
+        "actif": true,
+        "dateCreation": "2025-08-07T11:00:00Z"
+    }
+}
+
+================================================================================
+
+🏥 VÉRIFICATION SANTÉ SERVICE :
+
+REQUEST :
+GET http://localhost:8081/api/auth/health
+
+RESPONSE (200) :
+{
+    "success": true,
+    "message": "Service d'authentification opérationnel",
+    "data": "OK"
+}
+
+================================================================================
+
+🎭 RÔLES DISPONIBLES DANS LE SYSTÈME :
+
+ADMIN : Administrateur système
+- Gestion complète des utilisateurs
+- Configuration système
+- Accès à tous les modules
+
+COACH : Entraîneur
+- Gestion de son équipe
+- Planification des entraînements
+- Gestion des matchs
+
+JOUEUR : Joueur de l'équipe
+- Consultation de son profil
+- Participation aux activités
+- Suivi de ses performances
+
+RESPONSABLE_FINANCIER : Gestionnaire financier
+- Gestion des budgets
+- Suivi des paiements
+- Rapports financiers
+
+STAFF_MEDICAL : Personnel médical
+- Suivi médical des joueurs
+- Gestion des blessures
+- Rapports de santé
+
+INVITE : Invité/Visiteur
+- Accès limité en lecture seule
+- Consultation des informations publiques
+
+⚠️ IMPORTANT : L'auth-service fournit uniquement le RÔLE.
+Les permissions détaillées sont gérées par chaque microservice !
+
+================================================================================
+2. SCÉNARIOS D'UTILISATION
+================================================================================
+
+🎯 SCÉNARIO 1 : CONNEXION COACH
+
+1. Le coach ouvre l'application mobile
+2. Saisit email : coach@cok.tn
+3. Saisit mot de passe : password123
+4. L'app envoie POST /api/auth/login
+5. Réception du token JWT
+6. Stockage sécurisé du token (Keychain/Keystore)
+7. Utilisation du token pour les requêtes suivantes
+
+UTILISATION TOKEN :
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+================================================================================
+
+🎯 SCÉNARIO 2 : CRÉATION RESPONSABLE FINANCIER PAR ADMIN
+
+1. Admin connecté accède à la gestion utilisateurs
+2. Clique "Ajouter nouveau responsable financier"
+3. Remplit le formulaire :
+   - Nom : "Benali"
+   - Prénom : "Karim"
+   - Email : "karim.benali@cok.tn"
+   - Mot de passe : "temp123"
+   - Rôle : "RESPONSABLE_FINANCIER"
+4. Soumission du formulaire
+5. Appel API avec token admin
+6. Création réussie
+7. Email de bienvenue envoyé (futur)
+
+🎯 SCÉNARIO 3 : CRÉATION STAFF MÉDICAL PAR ADMIN
+
+1. Admin connecté accède à la gestion utilisateurs
+2. Clique "Ajouter nouveau staff médical"
+3. Remplit le formulaire :
+   - Nom : "Docteur"
+   - Prénom : "Amina"
+   - Email : "dr.amina@cok.tn"
+   - Mot de passe : "medical123"
+   - Rôle : "STAFF_MEDICAL"
+4. Soumission du formulaire
+5. Appel API avec token admin
+6. Création réussie
+7. Accès aux modules médicaux activé
+
+================================================================================
+
+🎯 SCÉNARIO 3 : EXPIRATION TOKEN
+
+1. Utilisateur connecté depuis 25h
+2. Tentative d'accès à une ressource protégée
+3. Token expiré détecté
+4. Redirection vers page de connexion
+5. Nouvelle authentification requise
+6. Nouveau token généré
+
+GESTION EXPIRATION :
+- Vérification automatique côté client
+- Refresh token (à implémenter)
+- Déconnexion automatique
+
+================================================================================
+3. INTÉGRATION AVEC AUTRES SERVICES
+================================================================================
+
+🔗 COMMUNICATION INTER-SERVICES :
+
+SERVICE ÉQUIPE → AUTH SERVICE :
+GET /api/auth/validate-token
+Header: Authorization: Bearer <token>
+
+Réponse :
+{
+    "valid": true,
+    "userId": 1,
+    "role": "COACH",
+    "email": "coach@cok.tn"
+}
+
+SERVICE MATCH → AUTH SERVICE :
+POST /api/auth/check-permission
+{
+    "token": "eyJ...",
+    "resource": "match",
+    "action": "create"
+}
+
+Réponse :
+{
+    "authorized": true,
+    "userRole": "COACH"
+}
+
+================================================================================
+
+🛡️ MIDDLEWARE D'AUTHENTIFICATION :
+
+Chaque service doit implémenter :
+
+1. Extraction du token JWT
+2. Validation avec auth-service
+3. Extraction des informations utilisateur
+4. Contrôle des permissions
+5. Passage à la logique métier
+
+EXEMPLE PSEUDO-CODE :
+```
+function authenticateRequest(request) {
+    token = extractToken(request.headers.authorization)
+    if (!token) return unauthorized()
+    
+    userInfo = validateTokenWithAuthService(token)
+    if (!userInfo.valid) return unauthorized()
+    
+    request.user = userInfo
+    return next()
+}
+```
+
+================================================================================
+4. TESTS ET VALIDATION
+================================================================================
+
+🧪 TESTS UNITAIRES :
+
+TEST CONNEXION RÉUSSIE :
+- Email valide + mot de passe correct
+- Vérification génération token
+- Validation format réponse
+
+TEST CONNEXION ÉCHOUÉE :
+- Email inexistant
+- Mot de passe incorrect
+- Compte désactivé
+
+TEST CRÉATION UTILISATEUR :
+- Données valides
+- Email déjà existant
+- Rôle invalide
+- Permissions insuffisantes
+
+================================================================================
+
+🔍 TESTS D'INTÉGRATION :
+
+POSTMAN COLLECTION :
+1. Health Check
+2. Login Admin
+3. Create User (avec token admin)
+4. Login nouveau utilisateur
+5. Access denied (sans token)
+6. Token expiration
+
+CURL COMMANDS :
+# Test connexion
+curl -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@cok.tn","motDePasse":"password123"}'
+
+# Test avec token
+curl -X POST http://localhost:8081/api/auth/create-user \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"nom":"Test","prenom":"User","email":"test@cok.tn","motDePasse":"test123","role":"JOUEUR"}'
+
+================================================================================
+5. CODES D'ERREUR DÉTAILLÉS
+================================================================================
+
+📋 CODES HTTP ET MESSAGES :
+
+200 OK :
+- Connexion réussie
+- Opération terminée avec succès
+
+201 CREATED :
+- Utilisateur créé avec succès
+
+400 BAD REQUEST :
+- Données de requête invalides
+- Format email incorrect
+- Mot de passe trop faible
+- Champs obligatoires manquants
+
+401 UNAUTHORIZED :
+- Email ou mot de passe incorrect
+- Token JWT invalide
+- Token JWT expiré
+- Aucun token fourni
+
+403 FORBIDDEN :
+- Permissions insuffisantes
+- Rôle non autorisé pour cette action
+- Compte désactivé
+
+404 NOT FOUND :
+- Endpoint non trouvé
+- Utilisateur non trouvé
+
+409 CONFLICT :
+- Email déjà utilisé
+- Conflit de données
+
+500 INTERNAL SERVER ERROR :
+- Erreur base de données
+- Erreur interne du serveur
+- Configuration incorrecte
+
+503 SERVICE UNAVAILABLE :
+- Service temporairement indisponible
+- Base de données inaccessible
+
+================================================================================
+
+🔍 MESSAGES D'ERREUR SPÉCIFIQUES :
+
+VALIDATION :
+- "L'email est obligatoire"
+- "Format d'email invalide"
+- "Le mot de passe doit contenir au moins 8 caractères"
+- "Le rôle spécifié n'existe pas"
+
+AUTHENTIFICATION :
+- "Email ou mot de passe incorrect"
+- "Votre compte a été désactivé"
+- "Token d'authentification invalide"
+- "Votre session a expiré"
+
+AUTORISATION :
+- "Accès refusé : permissions insuffisantes"
+- "Seuls les administrateurs peuvent effectuer cette action"
+- "Vous ne pouvez pas modifier cet utilisateur"
+
+TECHNIQUE :
+- "Erreur de connexion à la base de données"
+- "Service temporairement indisponible"
+- "Erreur interne du serveur"
+
+================================================================================
+6. BONNES PRATIQUES
+================================================================================
+
+🔒 SÉCURITÉ :
+
+CÔTÉ CLIENT :
+- Stockage sécurisé du token (Keychain/Keystore)
+- Transmission uniquement en HTTPS
+- Nettoyage du token à la déconnexion
+- Gestion automatique de l'expiration
+
+CÔTÉ SERVEUR :
+- Validation stricte des entrées
+- Logs de sécurité détaillés
+- Rate limiting (à implémenter)
+- Rotation régulière des clés JWT
+
+================================================================================
+
+⚡ PERFORMANCE :
+
+OPTIMISATIONS :
+- Cache des tokens validés (Redis)
+- Pool de connexions DB optimisé
+- Index sur colonnes de recherche
+- Pagination des résultats
+
+MONITORING :
+- Temps de réponse API
+- Taux d'erreur
+- Utilisation mémoire
+- Connexions DB actives
+
+================================================================================
+
+🔧 MAINTENANCE :
+
+LOGS À SURVEILLER :
+- Tentatives de connexion échouées répétées
+- Erreurs de base de données
+- Tokens expirés fréquents
+- Pics d'utilisation
+
+MÉTRIQUES IMPORTANTES :
+- Nombre de connexions/heure
+- Taux de succès authentification
+- Temps moyen de réponse
+- Utilisation ressources
+
+SAUVEGARDE :
+- Base de données quotidienne
+- Configuration application
+- Logs de sécurité
+- Clés de chiffrement
+
+================================================================================
+📞 SUPPORT TECHNIQUE
+================================================================================
+En cas de problème :
+1. Vérifier les logs application
+2. Tester la connectivité DB
+3. Valider la configuration JWT
+4. Contrôler les permissions utilisateur
+
+Contacts :
+- Équipe développement : dev@cok.tn
+- Support technique : support@cok.tn
+- Urgences : +216 XX XXX XXX
+
+Version : 1.0.0
+Dernière mise à jour : 07/08/2025
+================================================================================
+
+================================================================================
+                    LOGIQUE MÉTIER - SERVICE D'AUTHENTIFICATION
+                         Plateforme Volley-ball COK
+================================================================================
+
+📋 TABLE DES MATIÈRES
+================================================================================
+1. Vue d'ensemble du service
+2. Architecture et composants
+3. Modèle de données
+4. Flux d'authentification
+5. Gestion des rôles et permissions
+6. Sécurité et JWT
+7. Endpoints disponibles
+8. Gestion des erreurs
+9. Configuration et déploiement
+
+================================================================================
+1. VUE D'ENSEMBLE DU SERVICE
+================================================================================
+
+🎯 OBJECTIF PRINCIPAL :
+Le service d'authentification (auth-service) est responsable de :
+- Authentifier les utilisateurs de la plateforme volley-ball
+- Gérer les sessions utilisateur via JWT
+- Contrôler l'accès basé sur les rôles (RBAC)
+- Fournir une API sécurisée pour les autres microservices
+
+🏗️ ARCHITECTURE :
+- Microservice Spring Boot indépendant
+- Base de données PostgreSQL dédiée
+- Communication via API REST
+- Sécurité basée sur JWT (JSON Web Tokens)
+- Port d'écoute : 8081
+- Context path : /api/auth
+
+================================================================================
+2. ARCHITECTURE ET COMPOSANTS
+================================================================================
+
+📁 STRUCTURE DU PROJET :
+auth-service/
+├── src/main/java/com/volleyball/authservice/
+│   ├── controller/     # Contrôleurs REST
+│   ├── service/        # Logique métier
+│   ├── repository/     # Accès aux données
+│   ├── model/          # Entités JPA
+│   ├── dto/            # Objets de transfert
+│   ├── config/         # Configuration Spring
+│   └── security/       # Sécurité JWT
+├── src/main/resources/
+│   ├── application.yml # Configuration
+│   ├── schema.sql      # Structure DB
+│   └── data.sql        # Données de test
+└── pom.xml            # Dépendances Maven
+
+🔧 COMPOSANTS PRINCIPAUX :
+
+1. AuthController : Point d'entrée API
+2. AuthService : Logique d'authentification
+3. UserService : Gestion des utilisateurs
+4. JwtUtil : Génération/validation des tokens
+5. CustomUserDetailsService : Intégration Spring Security
+6. DatabaseInitializer : Initialisation automatique
+
+================================================================================
+3. MODÈLE DE DONNÉES
+================================================================================
+
+👤 ENTITÉ USER :
+Table : users
+Colonnes :
+- id (BIGSERIAL) : Identifiant unique
+- nom (VARCHAR(50)) : Nom de famille
+- prenom (VARCHAR(50)) : Prénom
+- email (VARCHAR(100)) : Email unique (identifiant de connexion)
+- mot_de_passe (VARCHAR(255)) : Mot de passe hashé (BCrypt)
+- role (VARCHAR(30)) : Rôle utilisateur (ENUM: ADMIN, COACH, JOUEUR, RESPONSABLE_FINANCIER, STAFF_MEDICAL, INVITE)
+- actif (BOOLEAN) : Statut actif/inactif
+- date_creation (TIMESTAMP) : Date de création
+- date_modification (TIMESTAMP) : Dernière modification
+
+🎭 RÔLES DISPONIBLES :
+- ADMIN : Administrateur système (accès complet)
+- COACH : Entraîneur (gestion équipe, matchs, entraînements)
+- JOUEUR : Joueur (consultation, participation)
+- RESPONSABLE_FINANCIER : Responsable financier (gestion budget, paiements)
+- STAFF_MEDICAL : Staff médical (suivi santé, blessures)
+- INVITE : Invité (accès limité en lecture)
+
+📊 INDEX OPTIMISÉS :
+- idx_users_email : Recherche rapide par email
+- idx_users_role : Filtrage par rôle
+- idx_users_actif : Filtrage par statut
+
+================================================================================
+4. FLUX D'AUTHENTIFICATION
+================================================================================
+
+🔐 PROCESSUS DE CONNEXION :
+
+1. RÉCEPTION DE LA DEMANDE :
+   POST /api/auth/login
+   Body: { "email": "user@cok.tn", "motDePasse": "password123" }
+
+2. VALIDATION DES DONNÉES :
+   - Vérification format email
+   - Vérification présence mot de passe
+   - Validation des contraintes
+
+3. RECHERCHE UTILISATEUR :
+   - Requête en base par email
+   - Vérification existence utilisateur
+   - Contrôle statut actif
+
+4. VÉRIFICATION MOT DE PASSE :
+   - Comparaison avec BCrypt
+   - Hash stocké vs mot de passe saisi
+
+5. GÉNÉRATION TOKEN JWT :
+   - Création payload avec infos utilisateur
+   - Signature avec clé secrète
+   - Définition expiration (24h par défaut)
+
+6. RÉPONSE SUCCÈS :
+   {
+     "success": true,
+     "message": "Connexion réussie",
+     "data": {
+       "token": "eyJhbGciOiJIUzI1NiJ9...",
+       "user": { "id": 1, "nom": "Admin", ... }
+     }
+   }
+
+🚫 GESTION DES ÉCHECS :
+- Email inexistant → "Email ou mot de passe incorrect"
+- Mot de passe incorrect → "Email ou mot de passe incorrect"
+- Compte inactif → "Compte désactivé"
+- Erreur technique → "Erreur interne du serveur"
+
+================================================================================
+5. GESTION DES RÔLES ET PERMISSIONS
+================================================================================
+
+⚠️ IMPORTANT - GESTION DES PERMISSIONS :
+
+🚨 L'AUTH-SERVICE NE GÈRE PAS LES PERMISSIONS DÉTAILLÉES !
+
+Le service d'authentification se contente de :
+✅ Authentifier l'utilisateur
+✅ Fournir le RÔLE dans le token JWT
+✅ Valider les tokens
+
+🎯 RÔLES FOURNIS DANS LE JWT :
+- ADMIN
+- COACH
+- JOUEUR
+- RESPONSABLE_FINANCIER
+- STAFF_MEDICAL
+- INVITE
+
+🔒 GESTION DES PERMISSIONS DÉTAILLÉES :
+Les permissions spécifiques (qui peut faire quoi) sont gérées par :
+❌ PAS dans l'auth-service
+✅ Dans chaque microservice métier
+✅ Selon la logique business de chaque service
+✅ En fonction du rôle fourni par le JWT
+
+EXEMPLE :
+- Auth-service dit : "Utilisateur = COACH"
+- Service-match décide : "Un COACH peut créer des matchs pour son équipe"
+- Service-finance décide : "Un COACH ne peut pas voir les budgets"
+
+  CONTRÔLE D'ACCÈS :
+- JWT contient uniquement le RÔLE
+- Chaque service implémente ses propres règles
+- Pas de matrice de permissions centralisée
+
+================================================================================
+6. SÉCURITÉ ET JWT
+================================================================================
+
+🔐 CONFIGURATION JWT :
+
+STRUCTURE TOKEN :
+Header: { "alg": "HS256", "typ": "JWT" }
+Payload: {
+  "sub": "user@cok.tn",
+  "userId": 1,
+  "role": "ADMIN",
+  "nom": "Admin",
+  "prenom": "System",
+  "iat": 1691234567,
+  "exp": 1691320967
+}
+Signature: HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret)
+
+🛡️ MESURES DE SÉCURITÉ :
+- Mots de passe hashés avec BCrypt (force 10)
+- Tokens JWT signés avec clé secrète
+- Expiration automatique des tokens (24h)
+- Validation stricte des tokens
+- Protection CORS configurée
+- Headers de sécurité activés
+
+🔄 CYCLE DE VIE TOKEN :
+1. Génération à la connexion
+2. Inclusion dans header Authorization: Bearer <token>
+3. Validation à chaque requête
+4. Expiration automatique
+5. Renouvellement par nouvelle connexion
+
+================================================================================
+7. ENDPOINTS DISPONIBLES
+================================================================================
+
+🌐 API ENDPOINTS :
+
+POST /api/auth/login
+- Description : Authentification utilisateur
+- Body : LoginRequest { email, motDePasse }
+- Réponse : LoginResponse { token, user }
+- Statut : 200 (succès), 401 (échec)
+
+POST /api/auth/create-user
+- Description : Création nouvel utilisateur
+- Body : CreateUserRequest { nom, prenom, email, motDePasse, role }
+- Réponse : ApiResponse<User>
+- Autorisation : ADMIN uniquement
+
+GET /api/auth/health
+- Description : Vérification santé du service
+- Réponse : "Service d'authentification opérationnel"
+- Accès : Public
+
+POST /api/auth/debug-password (TEMPORAIRE)
+- Description : Debug mot de passe (développement)
+- Body : { email, password }
+- Réponse : Informations de debug
+
+🔒 AUTHENTIFICATION REQUISE :
+- Header : Authorization: Bearer <jwt_token>
+- Validation automatique par JwtAuthenticationFilter
+- Extraction des informations utilisateur du token
+
+================================================================================
+8. GESTION DES ERREURS
+================================================================================
+
+❌ TYPES D'ERREURS :
+
+ERREURS MÉTIER :
+- EMAIL_NOT_FOUND : Email non trouvé en base
+- INVALID_PASSWORD : Mot de passe incorrect
+- ACCOUNT_DISABLED : Compte utilisateur désactivé
+- DUPLICATE_EMAIL : Email déjà utilisé
+
+ERREURS TECHNIQUES :
+- DATABASE_ERROR : Erreur base de données
+- JWT_INVALID : Token JWT invalide
+- JWT_EXPIRED : Token JWT expiré
+- VALIDATION_ERROR : Erreur validation données
+
+ERREURS SYSTÈME :
+- INTERNAL_SERVER_ERROR : Erreur interne
+- SERVICE_UNAVAILABLE : Service indisponible
+
+📋 FORMAT RÉPONSE ERREUR :
+{
+  "success": false,
+  "message": "Description de l'erreur",
+  "data": null,
+  "timestamp": "2025-08-07T10:30:00Z"
+}
+
+🔍 LOGGING :
+- Niveau INFO : Connexions réussies
+- Niveau WARN : Tentatives échouées
+- Niveau ERROR : Erreurs techniques
+- Niveau DEBUG : Détails développement
+
+================================================================================
+9. CONFIGURATION ET DÉPLOIEMENT
+================================================================================
+
+⚙️ CONFIGURATION APPLICATION :
+
+Base de données :
+- URL : jdbc:postgresql://localhost:5432/auth_db
+- Utilisateur : auth_user
+- Pool connexions : HikariCP (max 10)
+
+JWT :
+- Algorithme : HS256
+- Expiration : 86400000ms (24h)
+- Clé secrète : Configurable via propriétés
+
+Sécurité :
+- CORS : Autorisé pour tous les domaines (dev)
+- CSRF : Désactivé (API REST)
+- Sessions : Stateless
+
+🚀 DÉPLOIEMENT :
+
+PRÉREQUIS :
+- Java 21+
+- PostgreSQL 12+
+- Maven 3.6+
+
+ÉTAPES :
+1. Configuration PostgreSQL
+2. Création base auth_db
+3. Configuration utilisateur auth_user
+4. Compilation : mvn clean compile
+5. Démarrage : mvn spring-boot:run
+6. Vérification : GET /api/auth/health
+
+🔧 MAINTENANCE :
+- Surveillance logs application
+- Monitoring base de données
+- Rotation clés JWT (recommandé)
+- Sauvegarde régulière base
+
+================================================================================
+📞 CONTACT ET SUPPORT
+================================================================================
+Développeur : Équipe COK Volley-ball
+Version : 1.0.0
+Dernière mise à jour : 07/08/2025
+================================================================================
+================================================================================
+                    NOUVEAUX ENDPOINTS API - SERVICE AUTHENTIFICATION
+                         Plateforme Volley-ball COK
+================================================================================
+
+🎯 NOUVEAUX ENDPOINTS AJOUTÉS
+================================================================================
+
+✅ ENDPOINTS CRÉÉS AVEC SUCCÈS :
+
+1. 🔧 MODIFICATION D'UTILISATEUR
+   - URL: PUT /api/auth/users/{userId}
+   - Description: Modifie les informations d'un utilisateur existant
+   - Authentification: ADMIN seulement
+   - Body: UpdateUserRequest (nom, prenom, email, role, actif)
+
+2. 🗑️ SUPPRESSION D'UTILISATEUR
+   - URL: DELETE /api/auth/users/{userId}
+   - Description: Supprime (désactive) un utilisateur
+   - Authentification: ADMIN seulement
+   - Action: Désactive le compte (actif = false)
+
+3. 📋 RÉCUPÉRATION D'UTILISATEUR PAR ID
+   - URL: GET /api/auth/users/{userId}
+   - Description: Récupère les informations d'un utilisateur spécifique
+   - Authentification: ADMIN seulement
+
+4. 📊 LISTE DE TOUS LES UTILISATEURS
+   - URL: GET /api/auth/users
+   - Description: Récupère tous les utilisateurs actifs
+   - Authentification: ADMIN seulement
+
+================================================================================
+🧪 TESTS RÉALISÉS AVEC SUCCÈS
+================================================================================
+
+✅ Test 1: Vérification de la santé du service
+✅ Test 2: Connexion avec l'utilisateur admin
+✅ Test 3: Création d'un nouvel utilisateur
+✅ Test 4: Récupération de tous les utilisateurs
+✅ Test 5: Modification d'un utilisateur
+✅ Test 6: Suppression d'un utilisateur
+
+================================================================================
+📋 EXEMPLES D'UTILISATION
+================================================================================
+
+🔐 CONNEXION ADMIN :
+POST http://localhost:8081/api/auth/login
+{
+    "email": "admin@cok.tn",
+    "motDePasse": "password123"
+}
+
+👤 CRÉATION UTILISATEUR :
+POST http://localhost:8081/api/auth/create-user
+{
+    "nom": "Test",
+    "prenom": "Joueur",
+    "email": "test.joueur@cok.tn",
+    "motDePasse": "password123",
+    "role": "JOUEUR"
+}
+
+📝 MODIFICATION UTILISATEUR :
+PUT http://localhost:8081/api/auth/users/{userId}
+Authorization: Bearer {token}
+{
+    "nom": "Test",
+    "prenom": "Joueur Modifié",
+    "email": "test.joueur.modifie@cok.tn",
+    "role": "COACH",
+    "actif": true
+}
+
+🗑️ SUPPRESSION UTILISATEUR :
+DELETE http://localhost:8081/api/auth/users/{userId}
+Authorization: Bearer {token}
+
+📋 RÉCUPÉRATION UTILISATEUR :
+GET http://localhost:8081/api/auth/users/{userId}
+Authorization: Bearer {token}
+
+📊 LISTE UTILISATEURS :
+GET http://localhost:8081/api/auth/users
+Authorization: Bearer {token}
+
+================================================================================
+🔒 SÉCURITÉ ET PERMISSIONS
+================================================================================
+
+✅ Tous les nouveaux endpoints nécessitent une authentification ADMIN
+✅ Validation des données avec Bean Validation
+✅ Gestion des erreurs appropriée
+✅ Logging détaillé pour le debugging
+✅ Suppression logique (désactivation) au lieu de suppression physique
+
+================================================================================
+🏗️ ARCHITECTURE TECHNIQUE
+================================================================================
+
+📁 NOUVEAUX FICHIERS CRÉÉS :
+- UpdateUserRequest.java : DTO pour la modification d'utilisateur
+- test-api.ps1 : Script de test PowerShell
+
+📁 MODIFICATIONS APPORTÉES :
+- AuthController.java : Ajout des nouveaux endpoints
+- AuthService.java : Ajout des nouvelles méthodes métier
+- SecurityConfig.java : Configuration des permissions
+
+================================================================================
+🚀 DÉPLOIEMENT
+================================================================================
+
+✅ Application déployée avec Docker Compose
+✅ Base de données PostgreSQL opérationnelle
+✅ Service accessible sur http://localhost:8081
+✅ Tests automatisés fonctionnels
+
+================================================================================
+📈 STATISTIQUES
+================================================================================
+
+📊 ENDPOINTS DISPONIBLES : 8
+- POST /login
+- POST /create-user
+- PUT /users/{userId} (NOUVEAU)
+- DELETE /users/{userId} (NOUVEAU)
+- GET /users/{userId} (NOUVEAU)
+- GET /users (NOUVEAU)
+- GET /check-email
+- GET /health
+
+🔐 RÔLES SUPPORTÉS : 6
+- ADMIN
+- COACH
+- JOUEUR
+- RESPONSABLE_FINANCIER
+- STAFF_MEDICAL
+- INVITE
+
+================================================================================ 
+
+================================================================================
+                    NOUVEAUX RÔLES ET GESTION DES PERMISSIONS
+                         Plateforme Volley-ball COK
+================================================================================
+
+🎯 MISE À JOUR IMPORTANTE - NOUVEAUX RÔLES AJOUTÉS
+================================================================================
+
+📋 RÔLES COMPLETS DISPONIBLES :
+================================================================================
+
+1. ADMIN
+   - Administrateur système
+   - Accès complet à tous les modules
+   - Gestion des utilisateurs
+
+2. COACH  
+   - Entraîneur de l'équipe
+   - Gestion sportive et technique
+
+3. JOUEUR
+   - Membre de l'équipe
+   - Participation aux activités
+
+4. RESPONSABLE_FINANCIER (NOUVEAU)
+   - Gestionnaire des finances
+   - Budgets, paiements, comptabilité
+
+5. STAFF_MEDICAL (NOUVEAU)
+   - Personnel médical
+   - Suivi santé, blessures, condition physique
+
+6. INVITE
+   - Visiteur/Invité
+   - Accès limité en lecture
+
+================================================================================
+🚨 PHILOSOPHIE DES PERMISSIONS - TRÈS IMPORTANT !
+================================================================================
+
+⚠️ L'AUTH-SERVICE NE GÈRE PAS LES PERMISSIONS DÉTAILLÉES !
+
+🎯 RESPONSABILITÉS DE L'AUTH-SERVICE :
+✅ Authentifier l'utilisateur (login/password)
+✅ Fournir le RÔLE dans le token JWT
+✅ Valider les tokens JWT
+✅ Gérer les sessions utilisateur
+
+❌ CE QUE L'AUTH-SERVICE NE FAIT PAS :
+❌ Définir qui peut faire quoi (permissions spécifiques)
+❌ Contrôler l'accès aux fonctionnalités métier
+❌ Gérer les règles business
+❌ Maintenir une matrice de permissions
+
+================================================================================
+🏗️ ARCHITECTURE DES PERMISSIONS
+================================================================================
+
+📊 RÉPARTITION DES RESPONSABILITÉS :
+
+AUTH-SERVICE :
+- Rôle : "Qui es-tu ?" 
+- Réponse : "Tu es un COACH"
+
+MICROSERVICE MÉTIER :
+- Question : "Que peut faire un COACH ?"
+- Réponse : "Un COACH peut créer des entraînements pour son équipe"
+
+EXEMPLE CONCRET :
+
+1. Utilisateur se connecte → Auth-service dit "COACH"
+2. Utilisateur veut créer un match → Service-match décide selon ses règles
+3. Utilisateur veut voir les finances → Service-finance refuse (pas autorisé)
+4. Utilisateur veut voir son équipe → Service-equipe autorise
+
+================================================================================
+🔧 IMPLÉMENTATION TECHNIQUE
+================================================================================
+
+📋 CONTENU DU TOKEN JWT :
+{
+  "sub": "coach@cok.tn",
+  "userId": 2,
+  "role": "COACH",           ← SEULE INFO FOURNIE PAR AUTH
+  "nom": "Hammami",
+  "prenom": "Ala",
+  "iat": 1691234567,
+  "exp": 1691320967
+}
+
+🔒 CONTRÔLE D'ACCÈS DANS CHAQUE SERVICE :
+
+SERVICE-MATCH :
+```java
+@PreAuthorize("hasRole('COACH') or hasRole('ADMIN')")
+public Match createMatch(Match match) {
+    // Logique métier du service
+}
+```
+
+SERVICE-FINANCE :
+```java
+@PreAuthorize("hasRole('RESPONSABLE_FINANCIER') or hasRole('ADMIN')")
+public Budget getBudget() {
+    // Seuls finance et admin peuvent voir
+}
+```
+
+SERVICE-MEDICAL :
+```java
+@PreAuthorize("hasRole('STAFF_MEDICAL') or hasRole('ADMIN')")
+public RapportMedical createRapport() {
+    // Seul staff médical peut créer
+}
+```
+
+================================================================================
+👥 UTILISATEURS DE TEST DISPONIBLES
+================================================================================
+
+📋 COMPTES CRÉÉS AUTOMATIQUEMENT :
+
+| Email                | Mot de passe | Rôle                   |
+|---------------------|--------------|------------------------|
+| admin@cok.tn        | password123  | ADMIN                  |
+| coach@cok.tn        | password123  | COACH                  |
+| joueur1@cok.tn      | password123  | JOUEUR                 |
+| joueur2@cok.tn      | password123  | JOUEUR                 |
+| finance@cok.tn      | password123  | RESPONSABLE_FINANCIER  |
+| medical@cok.tn      | password123  | STAFF_MEDICAL          |
+| invite@cok.tn       | password123  | INVITE                 |
+
+================================================================================
+🧪 TESTS DES NOUVEAUX RÔLES
+================================================================================
+
+🔐 TEST CONNEXION RESPONSABLE FINANCIER :
+POST http://localhost:8081/api/auth/login
+{
+    "email": "finance@cok.tn",
+    "motDePasse": "password123"
+}
+
+RÉPONSE ATTENDUE :
+{
+    "success": true,
+    "data": {
+        "token": "eyJ...",
+        "user": {
+            "role": "RESPONSABLE_FINANCIER",
+            "email": "finance@cok.tn"
+        }
+    }
+}
+
+🔐 TEST CONNEXION STAFF MÉDICAL :
+POST http://localhost:8081/api/auth/login
+{
+    "email": "medical@cok.tn",
+    "motDePasse": "password123"
+}
+
+RÉPONSE ATTENDUE :
+{
+    "success": true,
+    "data": {
+        "token": "eyJ...",
+        "user": {
+            "role": "STAFF_MEDICAL",
+            "email": "medical@cok.tn"
+        }
+    }
+}
+
+================================================================================
+📋 GUIDE POUR LES AUTRES MICROSERVICES
+================================================================================
+
+🔧 COMMENT UTILISER LES RÔLES DANS VOS SERVICES :
+
+1. RÉCUPÉRER LE RÔLE DU JWT :
+```java
+String role = jwtUtil.getRoleFromToken(token);
+```
+
+2. IMPLÉMENTER VOS RÈGLES MÉTIER :
+```java
+switch(role) {
+    case "ADMIN":
+        // Accès complet
+        break;
+    case "RESPONSABLE_FINANCIER":
+        // Accès aux finances uniquement
+        break;
+    case "STAFF_MEDICAL":
+        // Accès aux données médicales uniquement
+        break;
+    case "COACH":
+        // Accès gestion équipe
+        break;
+    case "JOUEUR":
+        // Accès limité consultation
+        break;
+    case "INVITE":
+        // Accès lecture seule
+        break;
+}
+```
+
+3. UTILISER LES ANNOTATIONS SPRING :
+```java
+@PreAuthorize("hasRole('RESPONSABLE_FINANCIER')")
+@PreAuthorize("hasRole('STAFF_MEDICAL')")
+@PreAuthorize("hasAnyRole('ADMIN', 'COACH')")
+```
+
+================================================================================
+⚠️ POINTS IMPORTANTS À RETENIR
+================================================================================
+
+🎯 RÈGLES D'OR :
+
+1. L'AUTH-SERVICE fournit uniquement le RÔLE
+2. Chaque microservice définit ses propres permissions
+3. Pas de matrice de permissions centralisée
+4. Chaque service est responsable de sa sécurité
+5. Les rôles sont des "étiquettes", pas des permissions
+
+🔒 SÉCURITÉ :
+
+- Toujours valider le token JWT
+- Implémenter les contrôles dans chaque service
+- Ne jamais faire confiance au client
+- Logger les accès pour audit
+
+📊 ÉVOLUTIVITÉ :
+
+- Facile d'ajouter de nouveaux rôles
+- Chaque service évolue indépendamment
+- Pas de couplage fort entre services
+- Flexibilité maximale
+
+================================================================================
+📞 SUPPORT ET QUESTIONS
+================================================================================
+
+Si vous avez des questions sur :
+- L'implémentation des permissions dans votre service
+- L'utilisation des rôles
+- L'intégration avec l'auth-service
+
+Contactez l'équipe de développement !
+
+Version : 1.1.0 (avec nouveaux rôles)
+Dernière mise à jour : 07/08/2025
+================================================================================

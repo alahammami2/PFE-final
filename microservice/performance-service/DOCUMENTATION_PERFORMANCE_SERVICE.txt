@@ -1,0 +1,458 @@
+================================================================================
+                    DOCUMENTATION MICROSERVICE PERFORMANCE-SERVICE
+                    Plateforme Intelligente - Gestion Équipe Volleyball
+================================================================================
+
+📊 DESCRIPTION GÉNÉRALE
+================================================================================
+Le microservice performance-service est responsable de la gestion des performances,
+des joueurs et des absences pour une équipe de volleyball. Il permet de créer,
+consulter, modifier et supprimer les données liées aux joueurs, leurs performances
+et leurs absences.
+
+🏗️ ARCHITECTURE TECHNIQUE
+================================================================================
+- Framework: Spring Boot 3.2.0
+- Langage: Java 17
+- Base de données: PostgreSQL
+- Port: 8083
+- Context Path: /api/performance
+- Sécurité: Spring Security (désactivée pour développement)
+- Containerisation: Docker + Docker Compose
+- DDL Mode: create-drop (pour résoudre les problèmes de schéma)
+
+📊 MODÈLE DE DONNÉES
+================================================================================
+
+Table: players
+--------------
+- id (BIGSERIAL PRIMARY KEY) - Identifiant unique
+- nom (VARCHAR(100) NOT NULL) - Nom du joueur
+- prenom (VARCHAR(100) NOT NULL) - Prénom du joueur
+- email (VARCHAR(150) UNIQUE) - Email du joueur
+- telephone (VARCHAR(20)) - Numéro de téléphone
+- date_naissance (DATE NOT NULL) - Date de naissance
+- position (VARCHAR(20) NOT NULL) - Position du joueur (ENUM)
+- numero_maillot (INTEGER UNIQUE) - Numéro de maillot
+- taille_cm (INTEGER) - Taille en centimètres
+- poids_kg (DECIMAL) - Poids en kilogrammes
+- statut (VARCHAR(20) NOT NULL) - Statut du joueur (ENUM)
+- date_debut_equipe (DATE) - Date d'entrée dans l'équipe
+- actif (BOOLEAN DEFAULT TRUE) - Statut actif/inactif
+- date_creation (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date de création
+- date_modification (TIMESTAMP) - Date de dernière modification
+
+Positions supportées:
+- LIBERO: Libéro
+- PASSEUR: Passeur
+- ATTAQUANT: Attaquant
+- CENTRAL: Central
+- RECEPTEUR_ATTAQUANT: Récepteur-Attaquant
+
+Statuts supportés:
+- ACTIF: Joueur actif
+- INACTIF: Joueur inactif
+- BLESSE: Joueur blessé
+- SUSPENDU: Joueur suspendu
+
+Table: absences
+---------------
+- id (BIGSERIAL PRIMARY KEY) - Identifiant unique
+- player_id (BIGINT NOT NULL) - Référence vers le joueur
+- date_absence (DATE NOT NULL) - Date de l'absence
+- type_absence (VARCHAR(20) NOT NULL) - Type d'absence (ENUM)
+- justifiee (BOOLEAN DEFAULT FALSE) - Absence justifiée ou non
+- commentaire (VARCHAR(500)) - Commentaire sur l'absence
+- date_creation (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date de création
+- date_modification (TIMESTAMP) - Date de dernière modification
+
+Types d'absence supportés:
+- MALADIE: Maladie
+- BLESSURE: Blessure
+- PERSONNEL: Raison personnelle
+- AUTRE: Autre raison
+
+Table: performances
+-------------------
+- id (BIGSERIAL PRIMARY KEY) - Identifiant unique
+- player_id (BIGINT NOT NULL) - Référence vers le joueur
+- date_evaluation (DATE NOT NULL) - Date de l'évaluation
+- type_performance (VARCHAR(20) NOT NULL) - Type de performance (ENUM)
+- note_globale (DECIMAL NOT NULL) - Note globale (0-10)
+- commentaire (VARCHAR(500)) - Commentaire sur la performance
+- date_creation (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date de création
+- date_modification (TIMESTAMP) - Date de dernière modification
+
+Types de performance supportés:
+- ENTRAINEMENT: Performance en entraînement
+- MATCH: Performance en match
+- EVALUATION: Évaluation générale
+
+🔗 ENDPOINTS API
+================================================================================
+
+Base URL: http://localhost:8083/api/performance
+
+1. ENDPOINTS PLAYERS (Joueurs)
+   ============================
+
+1.1. CRÉER UN JOUEUR
+     ----------------
+     POST /players
+     Content-Type: application/json
+     
+     Body (exemple):
+     {
+       "nom": "Dupont",
+       "prenom": "Jean",
+       "email": "jean.dupont@email.com",
+       "telephone": "0123456789",
+       "dateNaissance": "1995-05-15",
+       "position": "ATTAQUANT",
+       "numeroMaillot": 10,
+       "tailleCm": 185,
+       "poidsKg": 75.5,
+       "statut": "ACTIF",
+       "dateDebutEquipe": "2024-01-01"
+     }
+     
+     Réponse succès:
+     {
+       "id": 1,
+       "nom": "Dupont",
+       "prenom": "Jean",
+       "email": "jean.dupont@email.com",
+       "telephone": "0123456789",
+       "dateNaissance": "1995-05-15",
+       "position": "ATTAQUANT",
+       "numeroMaillot": 10,
+       "tailleCm": 185,
+       "poidsKg": 75.5,
+       "statut": "ACTIF",
+       "dateDebutEquipe": "2024-01-01",
+       "actif": true,
+       "dateCreation": "2025-01-09T00:00:00",
+       "dateModification": null
+     }
+
+1.2. RÉCUPÉRER TOUS LES JOUEURS
+     ---------------------------
+     GET /players
+     Description: Récupère tous les joueurs
+     
+     Réponse:
+     [
+       {
+         "id": 1,
+         "nom": "Dupont",
+         "prenom": "Jean",
+         "position": "ATTAQUANT",
+         "numeroMaillot": 10,
+         "statut": "ACTIF",
+         "actif": true
+       }
+     ]
+
+1.3. RÉCUPÉRER UN JOUEUR PAR ID
+     ---------------------------
+     GET /players/{id}
+     Paramètre: id (Long) - Identifiant du joueur
+     
+     Exemple: GET /players/1
+
+1.4. RÉCUPÉRER LES JOUEURS ACTIFS
+     -----------------------------
+     GET /players/active
+     Description: Récupère tous les joueurs avec statut ACTIF
+
+1.5. RÉCUPÉRER LES JOUEURS PAR POSITION
+     -----------------------------------
+     GET /players/by-position/{position}
+     Paramètre: position (Position) - Position du joueur
+     
+     Exemples:
+     - GET /players/by-position/ATTAQUANT
+     - GET /players/by-position/PASSEUR
+     - GET /players/by-position/LIBERO
+     - GET /players/by-position/CENTRAL
+     - GET /players/by-position/RECEPTEUR_ATTAQUANT
+
+1.6. METTRE À JOUR UN JOUEUR
+     ------------------------
+     PUT /players/{id}
+     Content-Type: application/json
+     
+     Body: Mêmes champs que la création
+
+1.7. SUPPRIMER UN JOUEUR
+     --------------------
+     DELETE /players/{id}
+     Paramètre: id (Long) - Identifiant du joueur
+
+2. ENDPOINTS ABSENCES
+   ===================
+
+2.1. CRÉER UNE ABSENCE
+     ------------------
+     POST /absences
+     Content-Type: application/json
+     
+     Body (exemple):
+     {
+       "playerId": 1,
+       "dateAbsence": "2025-01-15",
+       "typeAbsence": "MALADIE",
+       "justifiee": true,
+       "commentaire": "Grippe saisonnière"
+     }
+
+2.2. RÉCUPÉRER TOUTES LES ABSENCES
+     ------------------------------
+     GET /absences
+     Description: Récupère toutes les absences
+
+2.3. RÉCUPÉRER UNE ABSENCE PAR ID
+     -----------------------------
+     GET /absences/{id}
+     Paramètre: id (Long) - Identifiant de l'absence
+
+2.4. RÉCUPÉRER LES ABSENCES D'UN JOUEUR
+     -----------------------------------
+     GET /absences/player/{playerId}
+     Paramètre: playerId (Long) - Identifiant du joueur
+
+2.5. RÉCUPÉRER LES ABSENCES ACTUELLES
+     ---------------------------------
+     GET /absences/current
+     Description: Récupère les absences du jour actuel
+
+2.6. RÉCUPÉRER LES STATISTIQUES D'ABSENCES
+     --------------------------------------
+     GET /absences/statistics
+     Description: Récupère les statistiques globales des absences
+
+2.7. METTRE À JOUR UNE ABSENCE
+     --------------------------
+     PUT /absences/{id}
+     Content-Type: application/json
+
+2.8. SUPPRIMER UNE ABSENCE
+     ----------------------
+     DELETE /absences/{id}
+     Paramètre: id (Long) - Identifiant de l'absence
+
+3. ENDPOINTS PERFORMANCES
+   =======================
+
+3.1. CRÉER UNE PERFORMANCE
+     ----------------------
+     POST /performances
+     Content-Type: application/json
+     
+     Body (exemple):
+     {
+       "playerId": 1,
+       "dateEvaluation": "2025-01-15",
+       "typePerformance": "MATCH",
+       "noteGlobale": 8.5,
+       "commentaire": "Excellente performance en attaque"
+     }
+
+3.2. RÉCUPÉRER TOUTES LES PERFORMANCES
+     ----------------------------------
+     GET /performances
+     Description: Récupère toutes les performances
+
+3.3. RÉCUPÉRER UNE PERFORMANCE PAR ID
+     ---------------------------------
+     GET /performances/{id}
+     Paramètre: id (Long) - Identifiant de la performance
+
+3.4. RÉCUPÉRER LES PERFORMANCES D'UN JOUEUR
+     ---------------------------------------
+     GET /performances/player/{playerId}
+     Paramètre: playerId (Long) - Identifiant du joueur
+
+3.5. RÉCUPÉRER LES STATISTIQUES DE PERFORMANCES
+     -------------------------------------------
+     GET /performances/statistics
+     Description: Récupère les statistiques globales des performances
+
+3.6. METTRE À JOUR UNE PERFORMANCE
+     ------------------------------
+     PUT /performances/{id}
+     Content-Type: application/json
+
+3.7. SUPPRIMER UNE PERFORMANCE
+     --------------------------
+     DELETE /performances/{id}
+     Paramètre: id (Long) - Identifiant de la performance
+
+🔧 LOGIQUE MÉTIER
+================================================================================
+
+1. GESTION DES JOUEURS
+   -------------------
+   - Validation des champs obligatoires (nom, prenom, dateNaissance, position, statut)
+   - Vérification de l'unicité de l'email et du numéro de maillot
+   - Attribution automatique de actif=true et dateCreation=now()
+   - Gestion des positions et statuts via des énumérations
+   - Calcul automatique de l'âge basé sur la date de naissance
+
+2. GESTION DES ABSENCES
+   --------------------
+   - Validation des champs obligatoires (playerId, dateAbsence, typeAbsence)
+   - Vérification de l'existence du joueur référencé
+   - Gestion des types d'absence via énumération
+   - Calcul des statistiques d'absences par joueur et par type
+   - Filtrage des absences par période
+
+3. GESTION DES PERFORMANCES
+   ------------------------
+   - Validation des champs obligatoires (playerId, dateEvaluation, typePerformance, noteGlobale)
+   - Validation de la note globale (doit être entre 0 et 10)
+   - Vérification de l'existence du joueur référencé
+   - Calcul des moyennes de performances par joueur et par type
+   - Génération de statistiques de performances
+
+🚀 DÉPLOIEMENT DOCKER
+================================================================================
+
+1. PRÉREQUIS
+   ---------
+   - Docker et Docker Compose installés
+   - Port 8083 disponible (service)
+   - Port 5433 disponible (PostgreSQL)
+
+2. COMMANDES DE DÉPLOIEMENT
+   ------------------------
+   # Construction et démarrage des conteneurs
+   docker-compose up --build -d
+   
+   # Vérification du statut
+   docker-compose ps
+   
+   # Consultation des logs
+   docker-compose logs performance-service
+   docker-compose logs postgres
+   
+   # Arrêt des conteneurs
+   docker-compose down
+
+3. CONFIGURATION DOCKER
+   ---------------------
+   - Base de données: PostgreSQL 15-alpine
+   - Port PostgreSQL: 5433 (externe) -> 5432 (interne)
+   - Port Service: 8083
+   - Réseau: performance-network
+   - Volume: postgres_data (persistance des données)
+
+🧪 TESTS ET EXEMPLES
+================================================================================
+
+1. TEST POWERSHELL - CRÉER UN JOUEUR
+   ----------------------------------
+   $playerData = @{
+       nom = "Dupont"
+       prenom = "Jean"
+       email = "jean.dupont@email.com"
+       telephone = "0123456789"
+       dateNaissance = "1995-05-15"
+       position = "ATTAQUANT"
+       numeroMaillot = 10
+       tailleCm = 185
+       poidsKg = 75.5
+       statut = "ACTIF"
+       dateDebutEquipe = "2024-01-01"
+   } | ConvertTo-Json
+
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/players" -Method POST -Body $playerData -ContentType "application/json"
+
+2. TEST POWERSHELL - CRÉER UNE ABSENCE
+   ------------------------------------
+   $absenceData = @{
+       playerId = 1
+       dateAbsence = "2025-01-15"
+       typeAbsence = "MALADIE"
+       justifiee = $true
+       commentaire = "Grippe"
+   } | ConvertTo-Json
+
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/absences" -Method POST -Body $absenceData -ContentType "application/json"
+
+3. TEST POWERSHELL - CRÉER UNE PERFORMANCE
+   ----------------------------------------
+   $performanceData = @{
+       playerId = 1
+       dateEvaluation = "2025-01-15"
+       typePerformance = "MATCH"
+       noteGlobale = 8.5
+       commentaire = "Excellente performance"
+   } | ConvertTo-Json
+
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/performances" -Method POST -Body $performanceData -ContentType "application/json"
+
+4. TESTS RAPIDES GET
+   ------------------
+   # Récupérer tous les joueurs
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/players"
+   
+   # Récupérer toutes les absences
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/absences"
+   
+   # Récupérer toutes les performances
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/performances"
+   
+   # Statistiques d'absences
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/absences/statistics"
+   
+   # Statistiques de performances
+   Invoke-WebRequest -Uri "http://localhost:8083/api/performance/performances/statistics"
+
+🔍 DÉPANNAGE
+================================================================================
+
+1. ERREURS COURANTES
+   -----------------
+   - Erreur 400 "Bad Request": Vérifier que tous les champs obligatoires sont présents
+   - Erreur de connexion: Vérifier que les conteneurs Docker sont démarrés
+   - Erreur de schéma: Le mode create-drop résout automatiquement les problèmes de schéma
+
+2. VÉRIFICATIONS
+   --------------
+   - Service actif: docker-compose ps
+   - Logs du service: docker-compose logs performance-service
+   - Logs de la base: docker-compose logs postgres
+   - Test de connectivité: curl http://localhost:8083/api/performance/players
+
+3. RÉSOLUTION DE PROBLÈMES
+   ------------------------
+   - Redémarrer les conteneurs: docker-compose restart
+   - Reconstruire: docker-compose up --build -d
+   - Nettoyer: docker-compose down && docker-compose up -d
+
+📝 NOTES IMPORTANTES
+================================================================================
+
+1. SÉCURITÉ
+   --------
+   - Authentification désactivée pour le développement
+   - En production, activer Spring Security
+   - Configurer HTTPS et les certificats SSL
+
+2. PERFORMANCE
+   -----------
+   - Index créés sur les colonnes fréquemment utilisées
+   - Pagination recommandée pour les grandes listes
+   - Cache Redis recommandé en production
+
+3. MAINTENANCE
+   -----------
+   - Sauvegardes régulières de la base PostgreSQL
+   - Monitoring des performances via Spring Actuator
+   - Logs centralisés recommandés (ELK Stack)
+
+================================================================================
+                              FIN DE DOCUMENTATION
+                        Performance Service v1.0.0 - 2025
+================================================================================

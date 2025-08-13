@@ -1,0 +1,835 @@
+================================================================================
+                    DOCUMENTATION MICROSERVICE MESSAGING-SERVICE
+                        Plateforme de Gestion d'Équipe de Volley-Ball
+================================================================================
+
+TABLE DES MATIÈRES
+==================
+1. PRÉSENTATION GÉNÉRALE
+2. ARCHITECTURE TECHNIQUE
+3. MODÈLE DE DONNÉES
+4. API ENDPOINTS
+5. LOGIQUE MÉTIER
+6. DÉPLOIEMENT DOCKER
+7. TESTS ET UTILISATION
+8. DÉPANNAGE
+9. MAINTENANCE
+
+================================================================================
+1. PRÉSENTATION GÉNÉRALE
+================================================================================
+
+Le microservice messaging-service est responsable de la gestion des messages et 
+notifications au sein de la plateforme de gestion d'équipe de volley-ball.
+
+FONCTIONNALITÉS PRINCIPALES :
+- Gestion des messages entre utilisateurs
+- Système de notifications push
+- Messages de diffusion (broadcast)
+- Notifications avec expiration
+- Recherche et filtrage avancés
+- Statistiques de messagerie
+- Support email (configuration requise)
+
+TECHNOLOGIES UTILISÉES :
+- Spring Boot 3.2.0
+- Java 17
+- PostgreSQL 15
+- Spring Data JPA
+- Spring Security (désactivée en développement)
+- Docker & Docker Compose
+- Maven
+
+================================================================================
+2. ARCHITECTURE TECHNIQUE
+================================================================================
+
+STRUCTURE DU PROJET :
+messaging-service/
+├── src/main/java/com/volleyball/messagingservice/
+│   ├── MessagingServiceApplication.java    # Classe principale
+│   ├── model/                              # Entités JPA
+│   │   ├── Message.java                    # Entité Message
+│   │   ├── Notification.java               # Entité Notification
+│   │   ├── MessageType.java                # Enum types de messages
+│   │   ├── MessagePriority.java            # Enum priorités messages
+│   │   ├── NotificationType.java           # Enum types notifications
+│   │   └── NotificationPriority.java       # Enum priorités notifications
+│   ├── repository/                         # Couche d'accès aux données
+│   │   ├── MessageRepository.java          # Repository messages
+│   │   └── NotificationRepository.java     # Repository notifications
+│   ├── service/                            # Logique métier
+│   │   ├── MessageService.java             # Service messages
+│   │   └── NotificationService.java        # Service notifications
+│   ├── controller/                         # Contrôleurs REST
+│   │   ├── MessageController.java          # API messages
+│   │   └── NotificationController.java     # API notifications
+│   └── config/                             # Configuration
+│       └── SecurityConfig.java             # Configuration sécurité
+├── src/main/resources/
+│   └── application.yml                     # Configuration application
+├── Dockerfile                              # Configuration Docker
+├── docker-compose.yml                      # Orchestration containers
+├── init-db.sql                             # Script initialisation DB
+└── pom.xml                                 # Configuration Maven
+
+PORTS ET SERVICES :
+- Application : 8084
+- Base de données PostgreSQL : 5434
+- Base URL API : http://localhost:8084/api/messaging
+
+================================================================================
+3. MODÈLE DE DONNÉES
+================================================================================
+
+ENTITÉ MESSAGE :
+- id : Long (Clé primaire)
+- senderId : Long (ID expéditeur)
+- receiverId : Long (ID destinataire)
+- subject : String (Sujet, max 200 caractères)
+- content : String (Contenu, max 5000 caractères)
+- type : MessageType (Type de message)
+- priority : MessagePriority (Priorité)
+- read : Boolean (Lu/non lu)
+- archived : Boolean (Archivé/non archivé)
+- dateCreation : LocalDateTime (Date création)
+- dateLecture : LocalDateTime (Date lecture)
+
+ENTITÉ NOTIFICATION :
+- id : Long (Clé primaire)
+- userId : Long (ID utilisateur)
+- title : String (Titre, max 200 caractères)
+- message : String (Message, max 1000 caractères)
+- type : NotificationType (Type notification)
+- priority : NotificationPriority (Priorité)
+- read : Boolean (Lue/non lue)
+- sent : Boolean (Envoyée/non envoyée)
+- emailSent : Boolean (Email envoyé/non envoyé)
+- dateCreation : LocalDateTime (Date création)
+- dateLecture : LocalDateTime (Date lecture)
+- dateEnvoi : LocalDateTime (Date envoi)
+- dateExpiration : LocalDateTime (Date expiration, optionnelle)
+- metadata : String (Métadonnées JSON, optionnelles)
+
+ÉNUMÉRATIONS :
+
+MessageType :
+- PERSONNEL, EQUIPE, ENTRAINEMENT, MATCH, ADMINISTRATIF, URGENCE, 
+  CONVOCATION, ABSENCE, PERFORMANCE, FELICITATION, RAPPEL, AUTRE
+
+MessagePriority :
+- BASSE, NORMALE, HAUTE, URGENTE
+
+NotificationType :
+- SYSTEME, ENTRAINEMENT, MATCH, CONVOCATION, ABSENCE, PERFORMANCE,
+  FELICITATION, RAPPEL, ALERTE, URGENCE, AUTRE
+
+NotificationPriority :
+- BASSE, NORMALE, HAUTE, URGENTE, CRITIQUE
+
+================================================================================
+4. API ENDPOINTS
+================================================================================
+
+BASE URL : http://localhost:8084/api/messaging
+
+ENDPOINTS MESSAGES (/messages) :
+================================
+
+POST /messages
+- Créer un nouveau message
+- Body : Message JSON
+- Retour : Message créé (201)
+
+GET /messages
+- Récupérer tous les messages
+- Retour : Liste des messages (200)
+
+GET /messages/{id}
+- Récupérer un message par ID
+- Retour : Message (200) ou 404
+
+GET /messages/received/{userId}
+- Messages reçus par un utilisateur
+- Retour : Liste des messages (200)
+
+GET /messages/sent/{userId}
+- Messages envoyés par un utilisateur
+- Retour : Liste des messages (200)
+
+GET /messages/unread/{userId}
+- Messages non lus d'un utilisateur
+- Retour : Liste des messages (200)
+
+GET /messages/archived/{userId}
+- Messages archivés d'un utilisateur
+- Retour : Liste des messages (200)
+
+GET /messages/active/{userId}
+- Messages actifs (non archivés) d'un utilisateur
+- Retour : Liste des messages (200)
+
+GET /messages/type/{type}
+- Messages par type
+- Retour : Liste des messages (200)
+
+GET /messages/priority/{priority}
+- Messages par priorité
+- Retour : Liste des messages (200)
+
+GET /messages/conversation/{userId1}/{userId2}
+- Conversation entre deux utilisateurs
+- Retour : Liste des messages (200)
+
+PUT /messages/{id}/read
+- Marquer un message comme lu
+- Retour : Message mis à jour (200)
+
+PUT /messages/{id}/archive
+- Archiver un message
+- Retour : Message mis à jour (200)
+
+PUT /messages/{id}/unarchive
+- Désarchiver un message
+- Retour : Message mis à jour (200)
+
+GET /messages/unread-count/{userId}
+- Compter les messages non lus
+- Retour : Nombre (200)
+
+GET /messages/urgent/{userId}
+- Messages urgents non lus
+- Retour : Liste des messages (200)
+
+GET /messages/search/{userId}?searchTerm=terme
+- Rechercher des messages
+- Retour : Liste des messages (200)
+
+PUT /messages/{id}
+- Mettre à jour un message
+- Body : Message JSON
+- Retour : Message mis à jour (200)
+
+DELETE /messages/{id}
+- Supprimer un message
+- Retour : 204 (No Content)
+
+POST /messages/broadcast
+- Envoyer un message de diffusion
+- Body : BroadcastMessageRequest JSON
+- Retour : Liste des messages créés (201)
+
+ENDPOINTS NOTIFICATIONS (/notifications) :
+==========================================
+
+POST /notifications
+- Créer une nouvelle notification
+- Body : Notification JSON
+- Retour : Notification créée (201)
+
+GET /notifications
+- Récupérer toutes les notifications
+- Retour : Liste des notifications (200)
+
+GET /notifications/{id}
+- Récupérer une notification par ID
+- Retour : Notification (200) ou 404
+
+GET /notifications/user/{userId}
+- Notifications d'un utilisateur
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/unread
+- Notifications non lues d'un utilisateur
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/read
+- Notifications lues d'un utilisateur
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/type/{type}
+- Notifications par type
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/priority/{priority}
+- Notifications par priorité
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/active
+- Notifications actives (non expirées)
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/urgent
+- Notifications urgentes non lues
+- Retour : Liste des notifications (200)
+
+PUT /notifications/{id}/read
+- Marquer une notification comme lue
+- Retour : Notification mise à jour (200)
+
+PUT /notifications/user/{userId}/read-all
+- Marquer toutes les notifications comme lues
+- Retour : 200
+
+PUT /notifications/{id}/sent
+- Marquer une notification comme envoyée
+- Retour : Notification mise à jour (200)
+
+GET /notifications/user/{userId}/unread-count
+- Compter les notifications non lues
+- Retour : Nombre (200)
+
+GET /notifications/user/{userId}/search?searchTerm=terme
+- Rechercher des notifications
+- Retour : Liste des notifications (200)
+
+GET /notifications/user/{userId}/period?startDate=date&endDate=date
+- Notifications par période
+- Retour : Liste des notifications (200)
+
+GET /notifications/pending
+- Notifications non envoyées
+- Retour : Liste des notifications (200)
+
+GET /notifications/expired
+- Notifications expirées
+- Retour : Liste des notifications (200)
+
+GET /notifications/email-pending
+- Notifications à envoyer par email
+- Retour : Liste des notifications (200)
+
+PUT /notifications/{id}
+- Mettre à jour une notification
+- Body : Notification JSON
+- Retour : Notification mise à jour (200)
+
+DELETE /notifications/{id}
+- Supprimer une notification
+- Retour : 204 (No Content)
+
+DELETE /notifications/cleanup-expired
+- Nettoyer les notifications expirées
+- Retour : 200
+
+POST /notifications/broadcast
+- Créer une notification de diffusion
+- Body : BroadcastNotificationRequest JSON
+- Retour : Liste des notifications créées (201)
+
+POST /notifications/with-expiration
+- Créer une notification avec expiration
+- Body : NotificationWithExpirationRequest JSON
+- Retour : Notification créée (201)
+
+GET /notifications/user/{userId}/stats/type
+- Statistiques par type
+- Retour : Map<NotificationType, Long> (200)
+
+GET /notifications/user/{userId}/stats/priority
+- Statistiques par priorité
+- Retour : Map<NotificationPriority, Long> (200)
+
+================================================================================
+5. LOGIQUE MÉTIER
+================================================================================
+
+GESTION DES MESSAGES :
+- Création automatique avec priorité NORMALE par défaut
+- Marquage automatique des dates de lecture
+- Archivage/désarchivage des messages
+- Recherche full-text dans sujet et contenu
+- Conversations bidirectionnelles
+- Messages de diffusion vers plusieurs destinataires
+
+GESTION DES NOTIFICATIONS :
+- Création avec priorité NORMALE par défaut
+- Système d'expiration automatique
+- Notifications urgentes et critiques
+- Marquage automatique des dates de lecture/envoi
+- Support métadonnées JSON
+- Nettoyage automatique des notifications expirées
+- Statistiques par type et priorité
+
+SÉCURITÉ :
+- Authentification désactivée en développement
+- CORS activé pour tous les domaines
+- CSRF désactivé
+
+================================================================================
+6. DÉPLOIEMENT DOCKER
+================================================================================
+
+PRÉREQUIS :
+- Docker et Docker Compose installés
+- Port 8084 disponible (application)
+- Port 5434 disponible (PostgreSQL)
+
+COMMANDES DE DÉPLOIEMENT :
+
+1. Construction du JAR :
+   mvn clean package -DskipTests
+
+2. Construction de l'image Docker :
+   docker-compose build
+
+3. Démarrage des services :
+   docker-compose up -d
+
+4. Vérification des logs :
+   docker-compose logs -f messaging-service
+
+5. Arrêt des services :
+   docker-compose down
+
+CONFIGURATION DOCKER :
+- Image PostgreSQL 15 Alpine
+- Base de données : messaging_db
+- Utilisateur : messaging_user
+- Mot de passe : root
+- Mode DDL : create-drop (recrée le schéma à chaque démarrage)
+
+HEALTHCHECKS :
+- PostgreSQL : pg_isready
+- Application : /actuator/health
+
+================================================================================
+7. TESTS ET UTILISATION
+================================================================================
+
+TESTS AVEC POWERSHELL :
+
+# Test de santé du service
+Invoke-WebRequest -Uri "http://localhost:8084/actuator/health" -Method GET
+
+# Créer un message
+$messageBody = @{
+    senderId = 1
+    receiverId = 2
+    subject = "Test Message"
+    content = "Contenu du message de test"
+    type = "PERSONNEL"
+    priority = "NORMALE"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/messages" -Method POST -Body $messageBody -ContentType "application/json"
+
+# Récupérer tous les messages
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/messages" -Method GET
+
+# Messages reçus par l'utilisateur 2
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/messages/received/2" -Method GET
+
+# Créer une notification
+$notificationBody = @{
+    userId = 1
+    title = "Notification Test"
+    message = "Message de notification de test"
+    type = "SYSTEME"
+    priority = "NORMALE"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/notifications" -Method POST -Body $notificationBody -ContentType "application/json"
+
+# Notifications d'un utilisateur
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/notifications/user/1" -Method GET
+
+# Compter les notifications non lues
+Invoke-WebRequest -Uri "http://localhost:8084/api/messaging/notifications/user/1/unread-count" -Method GET
+
+TESTS AVEC CURL :
+
+# Test de santé
+curl -X GET http://localhost:8084/actuator/health
+
+# Créer un message
+curl -X POST http://localhost:8084/api/messaging/messages \
+  -H "Content-Type: application/json" \
+  -d '{"senderId":1,"receiverId":2,"subject":"Test","content":"Contenu test","type":"PERSONNEL","priority":"NORMALE"}'
+
+# Créer une notification
+curl -X POST http://localhost:8084/api/messaging/notifications \
+  -H "Content-Type: application/json" \
+  -d '{"userId":1,"title":"Test Notification","message":"Message test","type":"SYSTEME","priority":"NORMALE"}'
+
+TESTS NAVIGATEUR :
+- http://localhost:8084/actuator/health
+- http://localhost:8084/api/messaging/messages
+- http://localhost:8084/api/messaging/notifications
+
+================================================================================
+8. DÉPANNAGE
+================================================================================
+
+PROBLÈMES COURANTS :
+
+1. SERVICE NE DÉMARRE PAS :
+   - Vérifier que le port 8084 n'est pas utilisé
+   - Vérifier les logs : docker-compose logs messaging-service
+   - Vérifier la connexion à la base de données
+
+2. ERREUR DE CONNEXION BASE DE DONNÉES :
+   - Vérifier que PostgreSQL est démarré
+   - Vérifier les credentials dans docker-compose.yml
+   - Attendre que PostgreSQL soit complètement initialisé
+
+3. ERREUR 404 SUR LES ENDPOINTS :
+   - Vérifier l'URL de base : /api/messaging
+   - Vérifier que l'application est démarrée
+   - Consulter les logs pour les erreurs de mapping
+
+4. ERREUR DE VALIDATION :
+   - Vérifier le format JSON des requêtes
+   - Vérifier les champs obligatoires
+   - Consulter les contraintes de validation
+
+COMMANDES DE DIAGNOSTIC :
+
+# Statut des conteneurs
+docker-compose ps
+
+# Logs détaillés
+docker-compose logs --tail=100 messaging-service
+
+# Connexion à la base de données
+docker exec -it messaging-postgres psql -U messaging_user -d messaging_db
+
+# Test de connectivité réseau
+docker exec messaging-service curl -f http://localhost:8084/actuator/health
+
+LOGS IMPORTANTS :
+- Démarrage de l'application Spring Boot
+- Connexion à la base de données
+- Création des tables Hibernate
+- Erreurs de validation des requêtes
+
+================================================================================
+9. MAINTENANCE
+================================================================================
+
+TÂCHES DE MAINTENANCE RÉGULIÈRES :
+
+1. NETTOYAGE DES NOTIFICATIONS EXPIRÉES :
+   DELETE /api/messaging/notifications/cleanup-expired
+
+2. SURVEILLANCE DES LOGS :
+   - Vérifier les erreurs de base de données
+   - Surveiller les performances des requêtes
+   - Contrôler l'utilisation mémoire
+
+3. SAUVEGARDE DE LA BASE DE DONNÉES :
+   docker exec messaging-postgres pg_dump -U messaging_user messaging_db > backup.sql
+
+4. MISE À JOUR DU SERVICE :
+   - Arrêter les conteneurs
+   - Reconstruire l'image
+   - Redémarrer les services
+
+MÉTRIQUES DISPONIBLES :
+- /actuator/health : Santé du service
+- /actuator/metrics : Métriques de performance
+- /actuator/info : Informations sur l'application
+
+ÉVOLUTIONS FUTURES :
+- Intégration WebSocket pour notifications temps réel
+- Configuration email pour envoi automatique
+- Interface d'administration web
+- API de statistiques avancées
+- Système de templates de messages
+
+================================================================================
+                                    FIN
+================================================================================
+
+Version : 1.0
+Date : 2025-01-09
+Auteur : Cascade AI Assistant
+Microservice : messaging-service
+Port : 8084
+Base de données : PostgreSQL (port 5434)
+
+# Messaging Service - Complete Postman Testing Guide
+
+## Base Configuration
+- **Base URL**: `http://localhost:8084/api/messaging`
+- **Authentication**: None (disabled for development)
+- **Content-Type**: `application/json`
+
+---
+
+## 📧 MESSAGE ENDPOINTS
+
+### 1. Create New Message
+- **Method**: `POST`
+- **URL**: `{{base_url}}/messages`
+- **Body** (JSON):
+```json
+{
+    "senderId": 1,
+    "receiverId": 2,
+    "subject": "Test Message",
+    "content": "This is a test message content",
+    "type": "PERSONNEL",
+    "priority": "NORMALE"
+}
+```
+
+### 2. Get All Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages`
+
+### 3. Get Message by ID
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/by-id?id=1`
+
+### 4. Get Received Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/received?userId=1`
+
+### 5. Get Sent Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/sent?userId=1`
+
+### 6. Get Unread Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/unread?userId=1`
+
+### 7. Get Archived Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/archived?userId=1`
+
+### 8. Get Active Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/active?userId=1`
+
+### 9. Get Messages by Type
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/by-type?type=PERSONNEL`
+
+### 10. Get Messages by Priority
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/by-priority?priority=HAUTE`
+
+### 11. Get Conversation
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/conversation?userId1=1&userId2=2`
+
+### 12. Mark Message as Read
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/messages/mark-read?id=1`
+
+### 13. Archive Message
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/messages/archive?id=1`
+
+### 14. Unarchive Message
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/messages/unarchive?id=1`
+
+### 15. Count Unread Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/unread/count?userId=1`
+
+### 16. Get Urgent Unread Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/urgent/unread?userId=1`
+
+### 17. Search Messages
+- **Method**: `GET`
+- **URL**: `{{base_url}}/messages/search?userId=1&searchTerm=test`
+
+### 18. Update Message
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/messages/update?id=1`
+- **Body** (JSON):
+```json
+{
+    "senderId": 1,
+    "receiverId": 2,
+    "subject": "Updated Test Message",
+    "content": "This is updated content",
+    "type": "EQUIPE",
+    "priority": "HAUTE"
+}
+```
+
+### 19. Delete Message
+- **Method**: `DELETE`
+- **URL**: `{{base_url}}/messages/delete?id=1`
+
+### 20. Send Broadcast Message
+- **Method**: `POST`
+- **URL**: `{{base_url}}/messages/broadcast`
+- **Body** (JSON):
+```json
+{
+    "senderId": 1,
+    "receiverIds": [2, 3, 4, 5],
+    "subject": "Broadcast Message",
+    "content": "This is a broadcast message to multiple users",
+    "type": "EQUIPE",
+    "priority": "HAUTE"
+}
+```
+
+---
+
+## 🔔 NOTIFICATION ENDPOINTS
+
+### 1. Create New Notification
+- **Method**: `POST`
+- **URL**: `{{base_url}}/notifications`
+- **Body** (JSON):
+```json
+{
+    "userId": 1,
+    "title": "Test Notification",
+    "content": "This is a test notification",
+    "type": "INFORMATION",
+    "priority": "NORMALE"
+}
+```
+
+### 2. Get All Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications`
+
+### 3. Get Notification by ID
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/by-id?id=1`
+
+### 4. Get User Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/user?userId=1`
+
+### 5. Get User Unread Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/user/unread?userId=1`
+
+### 6. Get Notifications by Type
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/by-type?type=INFORMATION`
+
+### 7. Get Notifications by Priority
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/by-priority?priority=HAUTE`
+
+### 8. Mark Notification as Read
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/notifications/mark-read?id=1`
+
+### 9. Mark All User Notifications as Read
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/notifications/mark-all-read?userId=1`
+
+### 10. Count Unread Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/unread/count?userId=1`
+
+### 11. Get Recent Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/recent?userId=1&days=7`
+
+### 12. Get Urgent Notifications
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/urgent?userId=1`
+
+### 13. Update Notification
+- **Method**: `PUT`
+- **URL**: `{{base_url}}/notifications/update?id=1`
+- **Body** (JSON):
+```json
+{
+    "userId": 1,
+    "title": "Updated Notification",
+    "content": "This is updated notification content",
+    "type": "ALERTE",
+    "priority": "URGENTE"
+}
+```
+
+### 14. Delete Notification
+- **Method**: `DELETE`
+- **URL**: `{{base_url}}/notifications/delete?id=1`
+
+### 15. Get Notification Statistics
+- **Method**: `GET`
+- **URL**: `{{base_url}}/notifications/statistics?userId=1`
+
+---
+
+## 📊 ENUM VALUES
+
+### Message Types:
+- `PERSONNEL`
+- `EQUIPE`
+- `ENTRAINEMENT`
+- `MATCH`
+- `ADMINISTRATIF`
+- `URGENCE`
+- `INFORMATION`
+- `CONVOCATION`
+- `AUTRE`
+
+### Message Priorities:
+- `BASSE`
+- `NORMALE`
+- `HAUTE`
+- `URGENTE`
+
+### Notification Types:
+- `INFORMATION`
+- `ALERTE`
+- `RAPPEL`
+- `CONFIRMATION`
+- `ERREUR`
+
+### Notification Priorities:
+- `BASSE`
+- `NORMALE`
+- `HAUTE`
+- `URGENTE`
+
+---
+
+## 🧪 TESTING SEQUENCE
+
+### Recommended Testing Order:
+
+1. **Create Messages**: Start with POST `/messages`
+2. **Create Notifications**: POST `/notifications`
+3. **List All**: GET `/messages` and GET `/notifications`
+4. **Test Filtering**: Try by-type, by-priority, by-user endpoints
+5. **Test Actions**: Mark as read, archive/unarchive
+6. **Test Search**: Use search endpoints
+7. **Test Updates**: PUT endpoints
+8. **Test Statistics**: Count and statistics endpoints
+9. **Test Deletion**: DELETE endpoints (do this last)
+
+### Sample User IDs for Testing:
+- Use `userId=1`, `userId=2`, `userId=3` for testing different users
+- Use `senderId=1, receiverId=2` for message testing
+
+---
+
+## ⚠️ IMPORTANT NOTES
+
+1. **No Authentication**: All endpoints are accessible without authentication
+2. **Database**: Uses `create-drop` mode - data resets on restart
+3. **CORS**: Enabled for all origins (`*`)
+4. **Validation**: Request bodies are validated - ensure required fields are included
+5. **Error Handling**: All endpoints return appropriate HTTP status codes
+
+---
+
+## 🚀 QUICK START
+
+1. Import this guide into Postman
+2. Set up environment variable: `base_url = http://localhost:8084/api/messaging`
+3. Start with creating a few messages and notifications
+4. Test the GET endpoints to verify data
+5. Try the filtering and search capabilities
+6. Test the update and delete operations
+
+Happy Testing! 🎯
+
