@@ -24,7 +24,8 @@ INSERT INTO players (nom, prenom, email, telephone, date_naissance, position, nu
 
 -- Joueurs avec statuts différents
 ('Mejri', 'Aymen', 'aymen.mejri@volleyball.tn', '+216 30 123 456', '1996-04-20', 'ATTAQUANT', 8, 189, 83.5, 'BLESSE', '2023-09-01'),
-('Zouari', 'Bilel', 'bilel.zouari@volleyball.tn', '+216 31 234 567', '1995-10-15', 'CENTRAL', 13, 193, 87.0, 'SUSPENDU', '2023-09-01');
+('Zouari', 'Bilel', 'bilel.zouari@volleyball.tn', '+216 31 234 567', '1995-10-15', 'CENTRAL', 13, 193, 87.0, 'SUSPENDU', '2023-09-01')
+ON CONFLICT (email) DO NOTHING;
 
 -- =================================================================
 -- INSERTION DES ABSENCES DE TEST
@@ -46,7 +47,8 @@ INSERT INTO absences (player_id, date_debut, date_fin, type_absence, raison, sta
 
 -- Absences longues
 (11, '2024-06-01', '2024-08-31', 'BLESSURE', 'Rupture des ligaments croisés', 'APPROUVEE', true, 'Blessure grave nécessitant une longue rééducation'),
-(12, '2024-07-01', '2024-08-15', 'AUTRE', 'Suspension disciplinaire', 'APPROUVEE', false, 'Comportement inapproprié lors du match');
+(12, '2024-07-01', '2024-08-15', 'AUTRE', 'Suspension disciplinaire', 'APPROUVEE', false, 'Comportement inapproprié lors du match')
+ON CONFLICT DO NOTHING;
 
 -- =================================================================
 -- INSERTION DES PERFORMANCES DE TEST
@@ -101,7 +103,8 @@ INSERT INTO performances (player_id, date_performance, type_performance, attaque
 
 -- Performances d'entraînement récentes
 (5, '2024-08-03', 'ENTRAINEMENT', 20, 15, 2, 2, 14, 11, 6, 19, 16, 5, 3, 3, 105, 7.5, 'Entraînement productif'),
-(6, '2024-08-03', 'ENTRAINEMENT', 22, 16, 1, 1, 26, 21, 9, 17, 14, 6, 3, 5, 110, 7.5, 'Progression constante');
+(6, '2024-08-03', 'ENTRAINEMENT', 22, 16, 1, 1, 26, 21, 9, 17, 14, 6, 3, 5, 110, 7.5, 'Progression constante')
+ON CONFLICT (player_id, date_performance, type_performance) DO NOTHING;
 
 -- =================================================================
 -- VÉRIFICATION DES DONNÉES INSÉRÉES

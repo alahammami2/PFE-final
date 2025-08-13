@@ -105,30 +105,45 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     private void insertTestData() {
         try {
-            // Supprimer tous les utilisateurs existants pour les recréer avec les bons mots de passe
-            jdbcTemplate.execute("DELETE FROM users");
-            logger.info("🗑️ Utilisateurs existants supprimés pour recréation");
-
-            // Vérifier si des utilisateurs existent déjà
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
-            logger.info("📊 {} utilisateur(s) dans la base après nettoyage", count);
-            
             // Encoder les mots de passe
             String encodedPassword = passwordEncoder.encode("password123");
             
-            // Insérer les utilisateurs de test
+            // Insérer les utilisateurs de test seulement s'ils n'existent pas déjà
             String insertSQL = """
                 INSERT INTO users (nom, prenom, email, mot_de_passe, role, actif, date_creation) 
                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT (email) DO NOTHING
                 """;
             
-            // Admin
-            jdbcTemplate.update(insertSQL, "Admin", "System", "admin@cok.tn", encodedPassword, "ADMIN", true);
-            logger.info("✅ Utilisateur admin créé");
+            // Admin de test
+            int adminInserted = jdbcTemplate.update(insertSQL, "Admin", "System", "admin@cok.tn", encodedPassword, "ADMIN", true);
+            if (adminInserted > 0) {
+                logger.info("✅ Utilisateur admin de test créé");
+            } else {
+                logger.info("ℹ️ Utilisateur admin de test existe déjà");
+            }
             
+            // Coach de test
+            int coachInserted = jdbcTemplate.update(insertSQL, "Coach", "Test", "coach@cok.tn", encodedPassword, "COACH", true);
+            if (coachInserted > 0) {
+                logger.info("✅ Utilisateur coach de test créé");
+            } else {
+                logger.info("ℹ️ Utilisateur coach de test existe déjà");
+            }
             
+            // Joueur de test
+            int joueurInserted = jdbcTemplate.update(insertSQL, "Joueur", "Test", "joueur@cok.tn", encodedPassword, "JOUEUR", true);
+            if (joueurInserted > 0) {
+                logger.info("✅ Utilisateur joueur de test créé");
+            } else {
+                logger.info("ℹ️ Utilisateur joueur de test existe déjà");
+            }
             
-            logger.info("🎉 Tous les utilisateurs de test ont été créés avec succès !");
+            // Compter le nombre total d'utilisateurs
+            Integer totalCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+            logger.info("📊 Total: {} utilisateur(s) dans la base de données", totalCount);
+            
+            logger.info("🎉 Initialisation des données de test terminée !");
             
         } catch (Exception e) {
             logger.warn("⚠️ Erreur lors de l'insertion des données de test: {}", e.getMessage());

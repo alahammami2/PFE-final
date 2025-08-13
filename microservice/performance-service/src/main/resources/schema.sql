@@ -3,15 +3,12 @@
 -- Service de gestion des performances et absences des joueurs
 -- =================================================================
 
--- Suppression des tables existantes (ordre inverse des dépendances)
-DROP TABLE IF EXISTS performances CASCADE;
-DROP TABLE IF EXISTS absences CASCADE;
-DROP TABLE IF EXISTS players CASCADE;
+-- Création des tables (sans suppression pour préserver les données)
 
 -- =================================================================
 -- TABLE PLAYERS (Joueurs)
 -- =================================================================
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
     id BIGSERIAL PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
@@ -30,18 +27,18 @@ CREATE TABLE players (
 );
 
 -- Index pour optimiser les recherches
-CREATE INDEX idx_players_nom ON players(nom);
-CREATE INDEX idx_players_prenom ON players(prenom);
-CREATE INDEX idx_players_email ON players(email);
-CREATE INDEX idx_players_position ON players(position);
-CREATE INDEX idx_players_statut ON players(statut);
-CREATE INDEX idx_players_actif ON players(actif);
-CREATE INDEX idx_players_numero_maillot ON players(numero_maillot);
+CREATE INDEX IF NOT EXISTS idx_players_nom ON players(nom);
+CREATE INDEX IF NOT EXISTS idx_players_prenom ON players(prenom);
+CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
+CREATE INDEX IF NOT EXISTS idx_players_position ON players(position);
+CREATE INDEX IF NOT EXISTS idx_players_statut ON players(statut);
+CREATE INDEX IF NOT EXISTS idx_players_actif ON players(actif);
+CREATE INDEX IF NOT EXISTS idx_players_numero_maillot ON players(numero_maillot);
 
 -- =================================================================
 -- TABLE ABSENCES (Absences des joueurs)
 -- =================================================================
-CREATE TABLE absences (
+CREATE TABLE IF NOT EXISTS absences (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     date_debut DATE NOT NULL,
@@ -59,18 +56,18 @@ CREATE TABLE absences (
 );
 
 -- Index pour optimiser les recherches
-CREATE INDEX idx_absences_player_id ON absences(player_id);
-CREATE INDEX idx_absences_date_debut ON absences(date_debut);
-CREATE INDEX idx_absences_date_fin ON absences(date_fin);
-CREATE INDEX idx_absences_type ON absences(type_absence);
-CREATE INDEX idx_absences_statut ON absences(statut);
-CREATE INDEX idx_absences_justifiee ON absences(justifiee);
-CREATE INDEX idx_absences_periode ON absences(date_debut, date_fin);
+CREATE INDEX IF NOT EXISTS idx_absences_player_id ON absences(player_id);
+CREATE INDEX IF NOT EXISTS idx_absences_date_debut ON absences(date_debut);
+CREATE INDEX IF NOT EXISTS idx_absences_date_fin ON absences(date_fin);
+CREATE INDEX IF NOT EXISTS idx_absences_type ON absences(type_absence);
+CREATE INDEX IF NOT EXISTS idx_absences_statut ON absences(statut);
+CREATE INDEX IF NOT EXISTS idx_absences_justifiee ON absences(justifiee);
+CREATE INDEX IF NOT EXISTS idx_absences_periode ON absences(date_debut, date_fin);
 
 -- =================================================================
 -- TABLE PERFORMANCES (Performances des joueurs)
 -- =================================================================
-CREATE TABLE performances (
+CREATE TABLE IF NOT EXISTS performances (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     date_performance DATE NOT NULL,
@@ -114,52 +111,18 @@ CREATE TABLE performances (
 );
 
 -- Index pour optimiser les recherches
-CREATE INDEX idx_performances_player_id ON performances(player_id);
-CREATE INDEX idx_performances_date ON performances(date_performance);
-CREATE INDEX idx_performances_type ON performances(type_performance);
-CREATE INDEX idx_performances_note ON performances(note_globale);
-CREATE INDEX idx_performances_player_date ON performances(player_id, date_performance);
-CREATE INDEX idx_performances_player_type ON performances(player_id, type_performance);
+CREATE INDEX IF NOT EXISTS idx_performances_player_id ON performances(player_id);
+CREATE INDEX IF NOT EXISTS idx_performances_date ON performances(date_performance);
+CREATE INDEX IF NOT EXISTS idx_performances_type ON performances(type_performance);
+CREATE INDEX IF NOT EXISTS idx_performances_note ON performances(note_globale);
+CREATE INDEX IF NOT EXISTS idx_performances_player_date ON performances(player_id, date_performance);
+CREATE INDEX IF NOT EXISTS idx_performances_player_type ON performances(player_id, type_performance);
 
 -- =================================================================
--- VUES UTILES POUR LES STATISTIQUES
+-- VUES UTILES POUR LES STATISTIQUES (CRÉÉES APRÈS LES TABLES)
 -- =================================================================
 
--- Vue des statistiques moyennes par joueur
-CREATE VIEW v_player_average_stats AS
-SELECT 
-    p.id as player_id,
-    p.nom,
-    p.prenom,
-    p.position,
-    COUNT(perf.id) as total_performances,
-    ROUND(AVG(perf.attaques_totales), 2) as moy_attaques_totales,
-    ROUND(AVG(perf.attaques_reussies), 2) as moy_attaques_reussies,
-    ROUND(AVG(perf.aces), 2) as moy_aces,
-    ROUND(AVG(perf.blocs), 2) as moy_blocs,
-    ROUND(AVG(perf.note_globale), 2) as moy_note_globale,
-    ROUND(AVG(CASE WHEN perf.attaques_totales > 0 THEN (perf.attaques_reussies::DECIMAL / perf.attaques_totales * 100) END), 2) as pourcentage_attaque
-FROM players p
-LEFT JOIN performances perf ON p.id = perf.player_id
-WHERE p.actif = TRUE
-GROUP BY p.id, p.nom, p.prenom, p.position;
-
--- Vue des absences en cours
-CREATE VIEW v_current_absences AS
-SELECT 
-    a.*,
-    p.nom,
-    p.prenom,
-    p.position,
-    CASE 
-        WHEN a.date_fin IS NULL THEN CURRENT_DATE - a.date_debut
-        ELSE a.date_fin - a.date_debut
-    END as duree_jours
-FROM absences a
-JOIN players p ON a.player_id = p.id
-WHERE a.date_debut <= CURRENT_DATE 
-  AND (a.date_fin IS NULL OR a.date_fin >= CURRENT_DATE)
-  AND a.statut IN ('EN_ATTENTE', 'APPROUVEE');
+-- Note: Les vues sont créées dans un script séparé pour éviter les conflits avec Hibernate
 
 -- =================================================================
 -- TRIGGERS POUR MISE À JOUR AUTOMATIQUE DES TIMESTAMPS
