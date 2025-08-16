@@ -28,15 +28,19 @@ public class CreateUserRequest {
     @NotNull(message = "Le rôle est obligatoire")
     private Role role;
 
+    @Size(max = 20, message = "Le numéro de téléphone ne peut pas dépasser 20 caractères")
+    private String telephone;
+
     // Constructeurs
     public CreateUserRequest() {}
 
-    public CreateUserRequest(String nom, String prenom, String email, String motDePasse, Role role) {
+    public CreateUserRequest(String nom, String prenom, String email, String motDePasse, Role role, String telephone) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.motDePasse = motDePasse;
         this.role = role;
+        this.telephone = telephone;
     }
 
     // Getters et Setters
@@ -78,5 +82,13 @@ public class CreateUserRequest {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 }

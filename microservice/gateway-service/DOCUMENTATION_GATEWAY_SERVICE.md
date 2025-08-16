@@ -26,7 +26,6 @@ Le gateway route automatiquement les requêtes vers les microservices approprié
 | Service | Port | Endpoint |
 |---------|------|----------|
 | Performance Service | 8083 | `/api/performance/**` |
-| Messaging Service | 8084 | `/api/messaging/**` |
 | Admin Request Service | 8085 | `/api/admin-requests/**` |
 | Medical Service | 8086 | `/api/medical/**` |
 | Finance Service | 8087 | `/api/finance/**` |
@@ -71,7 +70,6 @@ Liste des routes configurées
 {
   "routes": {
     "performance-service": "http://localhost:8083/api/performance",
-    "messaging-service": "http://localhost:8084/api/messaging",
     "admin-request-service": "http://localhost:8085/api/admin-requests",
     "medical-service": "http://localhost:8086/api/medical",
     "finance-service": "http://localhost:8087/api/finance",
@@ -129,7 +127,6 @@ Routes Spring Cloud Gateway détaillées
 ### Rate Limiting par Service
 ```yaml
 # Performance Service: 10 req/sec, burst 20
-# Messaging Service: 10 req/sec, burst 20
 # Admin Request Service: 5 req/sec, burst 10
 # Medical Service: 10 req/sec, burst 20
 # Finance Service: 5 req/sec, burst 10
@@ -181,9 +178,6 @@ curl http://localhost:8080/actuator/health
 ```bash
 # Test route vers performance service
 curl http://localhost:8080/api/performance/players
-
-# Test route vers messaging service
-curl http://localhost:8080/api/messaging/messages
 
 # Test route vers medical service
 curl http://localhost:8080/api/medical/health-records
@@ -249,7 +243,6 @@ docker-compose logs gateway-redis
 ```bash
 # Vérifier que les services cibles sont démarrés
 curl http://localhost:8083/actuator/health  # performance
-curl http://localhost:8084/actuator/health  # messaging
 curl http://localhost:8085/actuator/health  # admin-request
 curl http://localhost:8086/actuator/health  # medical
 curl http://localhost:8087/actuator/health  # finance
@@ -295,7 +288,6 @@ docker-compose down && docker system prune -f && docker-compose up --build -d
 
 Le Gateway Service est conçu pour s'intégrer parfaitement avec tous les microservices de la plateforme :
 - Performance Service (port 8083)
-- Messaging Service (port 8084)
 - Admin Request Service (port 8085)
 - Medical Service (port 8086)
 - Finance Service (port 8087)

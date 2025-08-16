@@ -5,6 +5,7 @@ import com.volleyball.performanceservice.model.StatutJoueur;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 
 /**
  * DTO pour la création d'un joueur
@@ -44,6 +45,9 @@ public class CreatePlayerRequest {
     @DecimalMin(value = "30.0", message = "Le poids doit être au moins 30 kg")
     @DecimalMax(value = "200.0", message = "Le poids ne peut pas dépasser 200 kg")
     private Double poidsKg;
+
+    @DecimalMin(value = "0.0", message = "Le salaire ne peut pas être négatif")
+    private BigDecimal salaire;
 
     private StatutJoueur statut = StatutJoueur.ACTIF;
 
@@ -132,6 +136,14 @@ public class CreatePlayerRequest {
 
     public void setPoidsKg(Double poidsKg) {
         this.poidsKg = poidsKg;
+    }
+
+    public BigDecimal getSalaire() {
+        return salaire;
+    }
+
+    public void setSalaire(BigDecimal salaire) {
+        this.salaire = salaire;
     }
 
     public StatutJoueur getStatut() {

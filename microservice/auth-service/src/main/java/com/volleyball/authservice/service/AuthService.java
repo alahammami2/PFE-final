@@ -125,6 +125,7 @@ public class AuthService {
             user.setMotDePasse(passwordEncoder.encode(createUserRequest.getMotDePasse()));
             user.setRole(createUserRequest.getRole());
             user.setActif(true);
+            user.setTelephone(createUserRequest.getTelephone());
 
             User savedUser = userRepository.save(user);
 
@@ -161,6 +162,7 @@ public class AuthService {
             existingUser.setEmail(updateUserRequest.getEmail());
             existingUser.setRole(updateUserRequest.getRole());
             existingUser.setActif(updateUserRequest.getActif());
+            existingUser.setTelephone(updateUserRequest.getTelephone());
 
             User updatedUser = userRepository.save(existingUser);
 

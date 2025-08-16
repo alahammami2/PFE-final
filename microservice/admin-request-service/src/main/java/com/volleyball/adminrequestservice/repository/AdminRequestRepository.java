@@ -1,9 +1,9 @@
 package com.volleyball.adminrequestservice.repository;
 
 import com.volleyball.adminrequestservice.model.AdminRequest;
+import com.volleyball.adminrequestservice.model.RequestPriority;
 import com.volleyball.adminrequestservice.model.RequestStatus;
 import com.volleyball.adminrequestservice.model.RequestType;
-import com.volleyball.adminrequestservice.model.RequestPriority;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,14 +30,8 @@ public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long
     // Recherche par priorité
     List<AdminRequest> findByPriority(RequestPriority priority);
 
-    // Recherche par assigné
-    List<AdminRequest> findByAssignedTo(Long assignedTo);
-
     // Recherche par demandeur et statut
     List<AdminRequest> findByRequesterIdAndStatus(Long requesterId, RequestStatus status);
-
-    // Recherche par assigné et statut
-    List<AdminRequest> findByAssignedToAndStatus(Long assignedTo, RequestStatus status);
 
     // Demandes en attente (soumises ou en cours)
     @Query("SELECT ar FROM AdminRequest ar WHERE ar.status IN ('SOUMISE', 'EN_COURS') ORDER BY ar.priority DESC, ar.createdAt ASC")
@@ -51,9 +45,7 @@ public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long
     @Query("SELECT ar FROM AdminRequest ar WHERE ar.createdAt BETWEEN :startDate AND :endDate ORDER BY ar.createdAt DESC")
     List<AdminRequest> findByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    // Demandes nécessitant une action avant une date
-    @Query("SELECT ar FROM AdminRequest ar WHERE ar.dateNeeded <= :deadline AND ar.status NOT IN ('APPROUVEE', 'REJETEE', 'TERMINEE', 'ANNULEE') ORDER BY ar.dateNeeded ASC")
-    List<AdminRequest> findRequestsNeedingActionByDeadline(@Param("deadline") LocalDateTime deadline);
+    // Champs supprimés: dateNeeded, assignedTo, approvedAt, processedAt
 
     // Statistiques par statut
     @Query("SELECT ar.status, COUNT(ar) FROM AdminRequest ar GROUP BY ar.status")
@@ -71,8 +63,8 @@ public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long
     @Query("SELECT ar FROM AdminRequest ar WHERE ar.createdAt >= :sinceDate ORDER BY ar.createdAt DESC")
     List<AdminRequest> findRecentRequests(@Param("sinceDate") LocalDateTime sinceDate);
 
-    // Recherche textuelle dans titre et description
-    @Query("SELECT ar FROM AdminRequest ar WHERE LOWER(ar.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(ar.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ORDER BY ar.createdAt DESC")
+    // Recherche textuelle dans description
+    @Query("SELECT ar FROM AdminRequest ar WHERE LOWER(ar.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ORDER BY ar.createdAt DESC")
     List<AdminRequest> searchRequests(@Param("searchTerm") String searchTerm);
 
     // Demandes avec budget
@@ -83,13 +75,7 @@ public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long
     @Query("SELECT ar.status, SUM(ar.budgetRequested) FROM AdminRequest ar WHERE ar.budgetRequested IS NOT NULL GROUP BY ar.status")
     List<Object[]> getBudgetSumByStatus();
 
-    // Demandes approuvées par période
-    @Query("SELECT ar FROM AdminRequest ar WHERE ar.status = 'APPROUVEE' AND ar.approvedAt BETWEEN :startDate AND :endDate ORDER BY ar.approvedAt DESC")
-    List<AdminRequest> findApprovedRequestsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
-
-    // Temps moyen de traitement
-    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (processed_at - created_at)) / 3600) FROM admin_requests WHERE processed_at IS NOT NULL", nativeQuery = true)
-    Double getAverageProcessingTimeInHours();
+    // Métriques basées sur processedAt/approvedAt supprimées
 
     // Demandes par demandeur et type
     List<AdminRequest> findByRequesterIdAndType(Long requesterId, RequestType type);
@@ -97,8 +83,4 @@ public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long
     // Compter les demandes par statut pour un demandeur
     @Query("SELECT COUNT(ar) FROM AdminRequest ar WHERE ar.requesterId = :requesterId AND ar.status = :status")
     Long countByRequesterIdAndStatus(@Param("requesterId") Long requesterId, @Param("status") RequestStatus status);
-
-    // Demandes assignées à un utilisateur avec priorité haute ou urgente
-    @Query("SELECT ar FROM AdminRequest ar WHERE ar.assignedTo = :assignedTo AND ar.priority IN ('HAUTE', 'URGENTE', 'CRITIQUE') AND ar.status = 'EN_COURS' ORDER BY ar.priority DESC, ar.createdAt ASC")
-    List<AdminRequest> findHighPriorityAssignedRequests(@Param("assignedTo") Long assignedTo);
 }

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 /**
  * Entité représentant un joueur de volleyball
@@ -56,6 +57,9 @@ public class Player {
 
     @Column(name = "poids_kg")
     private Double poidsKg;
+
+    @Column(name = "salaire", precision = 12, scale = 2)
+    private BigDecimal salaire;
 
     @NotNull(message = "Le statut est obligatoire")
     @Enumerated(EnumType.STRING)
@@ -177,6 +181,14 @@ public class Player {
 
     public void setPoidsKg(Double poidsKg) {
         this.poidsKg = poidsKg;
+    }
+
+    public BigDecimal getSalaire() {
+        return salaire;
+    }
+
+    public void setSalaire(BigDecimal salaire) {
+        this.salaire = salaire;
     }
 
     public StatutJoueur getStatut() {

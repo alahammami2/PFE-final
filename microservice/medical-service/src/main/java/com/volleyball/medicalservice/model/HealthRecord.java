@@ -35,13 +35,13 @@ public class HealthRecord {
     @Column(name = "blessure_date")
     private LocalDate blessureDate;
 
-    @Column(name = "traitement", columnDefinition = "TEXT")
-    private String traitement;
+    @Column(name = "statut_physique", length = 100)
+    private String statutPhysique;
 
     @NotNull(message = "Le statut est obligatoire")
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private HealthStatus status;
+    @Column(name = "status", nullable = false, length = 50)
+    private MedicalStatus status;
 
     @Column(name = "last_medical_checkup")
     private LocalDate lastMedicalCheckup;
@@ -58,7 +58,7 @@ public class HealthRecord {
     // Constructeurs
     public HealthRecord() {
         this.createdAt = LocalDateTime.now();
-        this.status = HealthStatus.ACTIVE;
+        this.status = MedicalStatus.EN_SUIVI;
     }
 
     public HealthRecord(Long playerId, String playerName) {
@@ -108,19 +108,19 @@ public class HealthRecord {
         this.blessureDate = blessureDate;
     }
 
-    public String getTraitement() {
-        return traitement;
+    public String getStatutPhysique() {
+        return statutPhysique;
     }
 
-    public void setTraitement(String traitement) {
-        this.traitement = traitement;
+    public void setStatutPhysique(String statutPhysique) {
+        this.statutPhysique = statutPhysique;
     }
 
-    public HealthStatus getStatus() {
+    public MedicalStatus getStatus() {
         return status;
     }
 
-    public void setStatus(HealthStatus status) {
+    public void setStatus(MedicalStatus status) {
         this.status = status;
     }
 

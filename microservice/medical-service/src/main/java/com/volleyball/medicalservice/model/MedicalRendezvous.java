@@ -15,7 +15,7 @@ public class MedicalRendezvous {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+    
     @Column(name = "player_id", nullable = false)
     private Long playerId;
 

@@ -34,23 +34,13 @@ public class Performance {
     @Column(name = "type_performance", nullable = false)
     private TypePerformance typePerformance;
 
-    // Statistiques offensives
-    @Min(value = 0, message = "Le nombre d'attaques ne peut pas être négatif")
-    @Column(name = "attaques_totales")
-    private Integer attaquesTotales = 0;
-
-    @Min(value = 0, message = "Le nombre d'attaques réussies ne peut pas être négatif")
-    @Column(name = "attaques_reussies")
-    private Integer attaquesReussies = 0;
+    // Statistiques offensives (attaques supprimées)
 
     @Min(value = 0, message = "Le nombre d'aces ne peut pas être négatif")
     @Column(name = "aces")
     private Integer aces = 0;
 
-    // Statistiques défensives
-    @Min(value = 0, message = "Le nombre de blocs ne peut pas être négatif")
-    @Column(name = "blocs")
-    private Integer blocs = 0;
+    // Statistiques défensives (blocs supprimés)
 
     @Min(value = 0, message = "Le nombre de réceptions ne peut pas être négatif")
     @Column(name = "receptions_totales")
@@ -59,10 +49,6 @@ public class Performance {
     @Min(value = 0, message = "Le nombre de réceptions réussies ne peut pas être négatif")
     @Column(name = "receptions_reussies")
     private Integer receptionsReussies = 0;
-
-    @Min(value = 0, message = "Le nombre de défenses ne peut pas être négatif")
-    @Column(name = "defenses")
-    private Integer defenses = 0;
 
     // Statistiques de service
     @Min(value = 0, message = "Le nombre de services ne peut pas être négatif")
@@ -85,11 +71,6 @@ public class Performance {
     @Min(value = 0, message = "Le nombre d'erreurs de réception ne peut pas être négatif")
     @Column(name = "erreurs_reception")
     private Integer erreursReception = 0;
-
-    // Temps de jeu
-    @Min(value = 0, message = "Le temps de jeu ne peut pas être négatif")
-    @Column(name = "temps_jeu_minutes")
-    private Integer tempsJeuMinutes = 0;
 
     // Note globale (sur 10)
     @Column(name = "note_globale")
@@ -126,11 +107,7 @@ public class Performance {
         dateModification = LocalDateTime.now();
     }
 
-    // Méthodes de calcul
-    public double getPourcentageAttaque() {
-        if (attaquesTotales == 0) return 0.0;
-        return (double) attaquesReussies / attaquesTotales * 100;
-    }
+    // Méthodes de calcul (pourcentage d'attaque supprimé)
 
     public double getPourcentageReception() {
         if (receptionsTotales == 0) return 0.0;
@@ -179,21 +156,7 @@ public class Performance {
         this.typePerformance = typePerformance;
     }
 
-    public Integer getAttaquesTotales() {
-        return attaquesTotales;
-    }
-
-    public void setAttaquesTotales(Integer attaquesTotales) {
-        this.attaquesTotales = attaquesTotales;
-    }
-
-    public Integer getAttaquesReussies() {
-        return attaquesReussies;
-    }
-
-    public void setAttaquesReussies(Integer attaquesReussies) {
-        this.attaquesReussies = attaquesReussies;
-    }
+    // Attaques supprimées
 
     public Integer getAces() {
         return aces;
@@ -203,13 +166,7 @@ public class Performance {
         this.aces = aces;
     }
 
-    public Integer getBlocs() {
-        return blocs;
-    }
-
-    public void setBlocs(Integer blocs) {
-        this.blocs = blocs;
-    }
+    // Blocs supprimés
 
     public Integer getReceptionsTotales() {
         return receptionsTotales;
@@ -227,13 +184,7 @@ public class Performance {
         this.receptionsReussies = receptionsReussies;
     }
 
-    public Integer getDefenses() {
-        return defenses;
-    }
 
-    public void setDefenses(Integer defenses) {
-        this.defenses = defenses;
-    }
 
     public Integer getServicesTotaux() {
         return servicesTotaux;
@@ -251,13 +202,7 @@ public class Performance {
         this.servicesReussis = servicesReussis;
     }
 
-    public Integer getErreursAttaque() {
-        return erreursAttaque;
-    }
-
-    public void setErreursAttaque(Integer erreursAttaque) {
-        this.erreursAttaque = erreursAttaque;
-    }
+    // Erreurs d'attaque supprimées
 
     public Integer getErreursService() {
         return erreursService;
@@ -275,13 +220,7 @@ public class Performance {
         this.erreursReception = erreursReception;
     }
 
-    public Integer getTempsJeuMinutes() {
-        return tempsJeuMinutes;
-    }
 
-    public void setTempsJeuMinutes(Integer tempsJeuMinutes) {
-        this.tempsJeuMinutes = tempsJeuMinutes;
-    }
 
     public Double getNoteGlobale() {
         return noteGlobale;
@@ -322,8 +261,7 @@ public class Performance {
                 ", player=" + (player != null ? player.getNom() + " " + player.getPrenom() : null) +
                 ", datePerformance=" + datePerformance +
                 ", typePerformance=" + typePerformance +
-                ", attaquesTotales=" + attaquesTotales +
-                ", attaquesReussies=" + attaquesReussies +
+                
                 ", noteGlobale=" + noteGlobale +
                 '}';
     }

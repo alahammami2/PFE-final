@@ -48,6 +48,7 @@ public class PlayerService {
         player.setNumeroMaillot(request.getNumeroMaillot());
         player.setTailleCm(request.getTailleCm());
         player.setPoidsKg(request.getPoidsKg());
+        player.setSalaire(request.getSalaire());
         player.setStatut(request.getStatut() != null ? request.getStatut() : StatutJoueur.ACTIF);
         player.setDateDebutEquipe(request.getDateDebutEquipe() != null ? request.getDateDebutEquipe() : LocalDate.now());
         player.setActif(true);
@@ -131,6 +132,7 @@ public class PlayerService {
         player.setNumeroMaillot(request.getNumeroMaillot());
         player.setTailleCm(request.getTailleCm());
         player.setPoidsKg(request.getPoidsKg());
+        player.setSalaire(request.getSalaire());
         if (request.getStatut() != null) {
             player.setStatut(request.getStatut());
         }

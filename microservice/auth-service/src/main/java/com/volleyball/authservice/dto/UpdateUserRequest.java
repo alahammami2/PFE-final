@@ -27,15 +27,19 @@ public class UpdateUserRequest {
     @NotNull(message = "Le statut actif est obligatoire")
     private Boolean actif;
 
+    @Size(max = 20, message = "Le numéro de téléphone ne peut pas dépasser 20 caractères")
+    private String telephone;
+
     // Constructeurs
     public UpdateUserRequest() {}
 
-    public UpdateUserRequest(String nom, String prenom, String email, Role role, Boolean actif) {
+    public UpdateUserRequest(String nom, String prenom, String email, Role role, Boolean actif, String telephone) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.role = role;
         this.actif = actif;
+        this.telephone = telephone;
     }
 
     // Getters et Setters
@@ -77,5 +81,13 @@ public class UpdateUserRequest {
 
     public void setActif(Boolean actif) {
         this.actif = actif;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 } 

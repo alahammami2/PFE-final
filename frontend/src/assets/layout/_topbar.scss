@@ -32,6 +32,12 @@
             width: 3rem;
         }
 
+        img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
         &:focus-visible {
             @include focused();
         }

@@ -1,7 +1,7 @@
 package com.volleyball.medicalservice.repository;
 
 import com.volleyball.medicalservice.model.HealthRecord;
-import com.volleyball.medicalservice.model.HealthStatus;
+import com.volleyball.medicalservice.model.MedicalStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,12 +23,12 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
     /**
      * Trouve tous les dossiers médicaux par statut
      */
-    List<HealthRecord> findByStatus(HealthStatus status);
+    List<HealthRecord> findByStatus(MedicalStatus status);
 
     /**
      * Trouve tous les dossiers médicaux actifs
      */
-    List<HealthRecord> findByStatusOrderByPlayerNameAsc(HealthStatus status);
+    List<HealthRecord> findByStatusOrderByPlayerNameAsc(MedicalStatus status);
 
     /**
      * Trouve les joueurs nécessitant un examen médical
@@ -43,5 +43,5 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
     /**
      * Compte les dossiers par statut
      */
-    long countByStatus(HealthStatus status);
+    long countByStatus(MedicalStatus status);
 }

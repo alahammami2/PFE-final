@@ -14,7 +14,7 @@ Schéma SQL (référence)
 
 health_records
 - id (PK), player_id (BIGINT, NOT NULL), player_name (VARCHAR(100), NOT NULL)
-- blessure_type (VARCHAR(50), NULL), blessure_date (DATE, NULL), traitement (TEXT, NULL)
+- blessure_type (VARCHAR(50), NULL), blessure_date (DATE, NULL), statut_physique (VARCHAR(100), NULL)
 - status (VARCHAR(32), NOT NULL), last_medical_checkup (DATE, NULL), next_checkup_due (DATE, NULL)
 - created_at (TIMESTAMP, NOT NULL), updated_at (TIMESTAMP, NULL)
 
@@ -26,9 +26,9 @@ medical_rendezvous
 
 Modèles (Entités)
 - HealthRecord
-  Champs: playerId, playerName, blessureType, blessureDate, traitement, status,
+  Champs: playerId, playerName, blessureType, blessureDate, statutPhysique, status,
           lastMedicalCheckup, nextCheckupDue, createdAt, updatedAt
-  Enum: HealthStatus (ACTIVE, INJURED, RECOVERING, RESTRICTED, ...)
+  Status: String (valeurs conseillées: ACTIVE, INJURED, RECOVERING, RESTRICTED)
   Remarque: anciens champs supprimés (sang, allergies, chroniques, médicaments, contact urgence, notes)
 
 - MedicalRendezvous (nouveau à implémenter)
@@ -40,7 +40,7 @@ Modèles (Entités)
 Règles Métier
 - HealthRecord
   * playerId, playerName, status obligatoires (status par défaut: ACTIVE)
-  * blessureType/blessureDate/traitement optionnels
+  * blessureType/blessureDate/statutPhysique optionnels
   * "À contrôler" si nextCheckupDue <= date du jour
   * Statistiques: total + par statut + joueurs à contrôler
 
@@ -89,7 +89,7 @@ Exemples de Payload (JSON)
   "playerName": "Ali Ben Salah",
   "blessureType": "Entorse",
   "blessureDate": "2025-08-01",
-  "traitement": "Repos + glace",
+  "statutPhysique": "Repos + glace",
   "status": "ACTIVE",
   "lastMedicalCheckup": "2025-07-01",
   "nextCheckupDue": "2025-09-01"
@@ -111,7 +111,7 @@ cURL rapides
 - Créer dossier de santé:
   curl -X POST http://localhost:8086/api/medical/dossiers-sante \
     -H "Content-Type: application/json" \
-    -d '{"playerId":12,"playerName":"Ali Ben Salah","blessureType":"Entorse","blessureDate":"2025-08-01","traitement":"Repos + glace","status":"ACTIVE"}'
+    -d '{"playerId":12,"playerName":"Ali Ben Salah","blessureType":"Entorse","blessureDate":"2025-08-01","statutPhysique":"Repos + glace","status":"ACTIVE"}'
 
 - Lister rendez-vous à venir:
   curl http://localhost:8086/api/medical/rendezvous/prochains
@@ -141,7 +141,7 @@ Headers communs:
     "playerName": "Ali Ben Salah",
     "blessureType": "Entorse",
     "blessureDate": "2025-08-01",
-    "traitement": "Repos + glace",
+    "statutPhysique": "Repos + glace",
     "status": "ACTIVE",
     "lastMedicalCheckup": "2025-07-01",
     "nextCheckupDue": "2025-09-01"

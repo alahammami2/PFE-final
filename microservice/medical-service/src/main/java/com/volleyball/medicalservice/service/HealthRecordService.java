@@ -1,7 +1,7 @@
 package com.volleyball.medicalservice.service;
 
 import com.volleyball.medicalservice.model.HealthRecord;
-import com.volleyball.medicalservice.model.HealthStatus;
+import com.volleyball.medicalservice.model.MedicalStatus;
 import com.volleyball.medicalservice.repository.HealthRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,7 +36,7 @@ public class HealthRecordService {
             record.setPlayerName(healthRecord.getPlayerName());
             record.setBlessureType(healthRecord.getBlessureType());
             record.setBlessureDate(healthRecord.getBlessureDate());
-            record.setTraitement(healthRecord.getTraitement());
+            record.setStatutPhysique(healthRecord.getStatutPhysique());
             record.setStatus(healthRecord.getStatus());
             record.setLastMedicalCheckup(healthRecord.getLastMedicalCheckup());
             record.setNextCheckupDue(healthRecord.getNextCheckupDue());
@@ -69,7 +69,7 @@ public class HealthRecordService {
     /**
      * Trouve tous les dossiers médicaux par statut
      */
-    public List<HealthRecord> getHealthRecordsByStatus(HealthStatus status) {
+    public List<HealthRecord> getHealthRecordsByStatus(MedicalStatus status) {
         return healthRecordRepository.findByStatusOrderByPlayerNameAsc(status);
     }
 
@@ -90,7 +90,7 @@ public class HealthRecordService {
     /**
      * Met à jour le statut de santé
      */
-    public HealthRecord updateHealthStatus(Long id, HealthStatus status) {
+    public HealthRecord updateHealthStatus(Long id, MedicalStatus status) {
         Optional<HealthRecord> existingRecord = healthRecordRepository.findById(id);
         if (existingRecord.isPresent()) {
             HealthRecord record = existingRecord.get();
@@ -123,7 +123,7 @@ public class HealthRecordService {
     /**
      * Compte les dossiers par statut
      */
-    public long countByStatus(HealthStatus status) {
+    public long countByStatus(MedicalStatus status) {
         return healthRecordRepository.countByStatus(status);
     }
 
@@ -133,10 +133,10 @@ public class HealthRecordService {
     public HealthRecordStatistics getHealthRecordStatistics() {
         HealthRecordStatistics stats = new HealthRecordStatistics();
         stats.setTotalRecords(healthRecordRepository.count());
-        stats.setActiveRecords(countByStatus(HealthStatus.ACTIVE));
-        stats.setInjuredRecords(countByStatus(HealthStatus.INJURED));
-        stats.setRecoveringRecords(countByStatus(HealthStatus.RECOVERING));
-        stats.setRestrictedRecords(countByStatus(HealthStatus.RESTRICTED));
+        stats.setActiveRecords(countByStatus(MedicalStatus.EN_SUIVI));
+        stats.setInjuredRecords(countByStatus(MedicalStatus.REPOS));
+        stats.setRecoveringRecords(countByStatus(MedicalStatus.RETABLI));
+        stats.setRestrictedRecords(0);
         stats.setPlayersNeedingCheckup(getPlayersNeedingCheckup().size());
         return stats;
     }

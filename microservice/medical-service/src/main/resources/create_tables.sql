@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS health_records (
     player_name VARCHAR(255) NOT NULL,
     blessure_type VARCHAR(50),
     blessure_date DATE,
-    traitement TEXT,
+    statut_physique VARCHAR(100),
     status VARCHAR(50) NOT NULL,
     last_medical_checkup DATE,
     next_checkup_due DATE,

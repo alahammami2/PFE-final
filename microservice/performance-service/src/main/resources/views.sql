@@ -11,12 +11,11 @@ SELECT
     p.prenom,
     p.position,
     COUNT(perf.id) as total_performances,
-    ROUND(AVG(perf.attaques_totales), 2) as moy_attaques_totales,
-    ROUND(AVG(perf.attaques_reussies), 2) as moy_attaques_reussies,
+    -- Attaques retirées
     ROUND(AVG(perf.aces), 2) as moy_aces,
-    ROUND(AVG(perf.blocs), 2) as moy_blocs,
+    -- Blocs retirés
     ROUND(AVG(perf.note_globale), 2) as moy_note_globale,
-    ROUND(AVG(CASE WHEN perf.attaques_totales > 0 THEN (perf.attaques_reussies::DECIMAL / perf.attaques_totales * 100) END), 2) as pourcentage_attaque
+    NULL::numeric as pourcentage_attaque
 FROM players p
 LEFT JOIN performances perf ON p.id = perf.player_id
 WHERE p.actif = TRUE

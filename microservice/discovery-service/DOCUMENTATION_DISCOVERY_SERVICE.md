@@ -47,7 +47,7 @@ Le Discovery Service est conçu pour enregistrer tous les microservices de la pl
 | Service | Port | Application Name |
 |---------|------|------------------|
 | Performance Service | 8083 | performance-service |
-| Messaging Service | 8084 | messaging-service |
+|  |  |  |
 | Admin Request Service | 8085 | admin-request-service |
 | Medical Service | 8086 | medical-service |
 | Finance Service | 8087 | finance-service |
@@ -112,7 +112,7 @@ Liste des services enregistrés
       "instances": 1
     },
     {
-      "name": "MESSAGING-SERVICE",
+      
       "instances": 1
     }
   ]

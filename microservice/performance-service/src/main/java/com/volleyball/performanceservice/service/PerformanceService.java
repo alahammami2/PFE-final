@@ -52,27 +52,21 @@ public class PerformanceService {
         performance.setTypePerformance(request.getTypePerformance());
         
         // Statistiques offensives
-        performance.setAttaquesTotales(request.getAttaquesTotales());
-        performance.setAttaquesReussies(request.getAttaquesReussies());
         performance.setAces(request.getAces());
         
         // Statistiques défensives
-        performance.setBlocs(request.getBlocs());
         performance.setReceptionsTotales(request.getReceptionsTotales());
         performance.setReceptionsReussies(request.getReceptionsReussies());
-        performance.setDefenses(request.getDefenses());
         
         // Statistiques de service
         performance.setServicesTotaux(request.getServicesTotaux());
         performance.setServicesReussis(request.getServicesReussis());
         
         // Erreurs
-        performance.setErreursAttaque(request.getErreursAttaque());
         performance.setErreursService(request.getErreursService());
         performance.setErreursReception(request.getErreursReception());
         
-        // Temps et note
-        performance.setTempsJeuMinutes(request.getTempsJeuMinutes());
+        // Note
         performance.setNoteGlobale(request.getNoteGlobale());
         performance.setCommentaires(request.getCommentaires());
 
@@ -83,10 +77,7 @@ public class PerformanceService {
      * Valider la cohérence des statistiques
      */
     private void validatePerformanceStats(CreatePerformanceRequest request) {
-        // Les attaques réussies ne peuvent pas dépasser les attaques totales
-        if (request.getAttaquesReussies() > request.getAttaquesTotales()) {
-            throw new RuntimeException("Le nombre d'attaques réussies ne peut pas dépasser le nombre d'attaques totales");
-        }
+        // Règle d'attaques retirée (colonnes supprimées)
 
         // Les réceptions réussies ne peuvent pas dépasser les réceptions totales
         if (request.getReceptionsReussies() > request.getReceptionsTotales()) {
@@ -184,11 +175,8 @@ public class PerformanceService {
         }
 
         return new Object() {
-            public final Double moyenneAttaquesTotales = (Double) stats[0];
-            public final Double moyenneAttaquesReussies = (Double) stats[1];
-            public final Double moyenneAces = (Double) stats[2];
-            public final Double moyenneBlocs = (Double) stats[3];
-            public final Double moyenneNoteGlobale = (Double) stats[4];
+            public final Double moyenneAces = (Double) stats[0];
+            public final Double moyenneNoteGlobale = (Double) stats[1];
         };
     }
 
@@ -203,11 +191,7 @@ public class PerformanceService {
         }
 
         return new Object() {
-            public final Long totalAttaques = (Long) stats[0];
-            public final Long totalAttaquesReussies = (Long) stats[1];
-            public final Long totalAces = (Long) stats[2];
-            public final Long totalBlocs = (Long) stats[3];
-            public final Long totalDefenses = (Long) stats[4];
+            public final Long totalAces = (Long) stats[0];
         };
     }
 
@@ -241,27 +225,21 @@ public class PerformanceService {
         performance.setTypePerformance(request.getTypePerformance());
         
         // Statistiques offensives
-        performance.setAttaquesTotales(request.getAttaquesTotales());
-        performance.setAttaquesReussies(request.getAttaquesReussies());
         performance.setAces(request.getAces());
         
         // Statistiques défensives
-        performance.setBlocs(request.getBlocs());
         performance.setReceptionsTotales(request.getReceptionsTotales());
         performance.setReceptionsReussies(request.getReceptionsReussies());
-        performance.setDefenses(request.getDefenses());
         
         // Statistiques de service
         performance.setServicesTotaux(request.getServicesTotaux());
         performance.setServicesReussis(request.getServicesReussis());
         
         // Erreurs
-        performance.setErreursAttaque(request.getErreursAttaque());
         performance.setErreursService(request.getErreursService());
         performance.setErreursReception(request.getErreursReception());
         
-        // Temps et note
-        performance.setTempsJeuMinutes(request.getTempsJeuMinutes());
+        // Note
         performance.setNoteGlobale(request.getNoteGlobale());
         performance.setCommentaires(request.getCommentaires());
 

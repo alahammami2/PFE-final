@@ -48,6 +48,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Boolean actif = true;
 
+    @Size(max = 20, message = "Le numéro de téléphone ne peut pas dépasser 20 caractères")
+    @Column(name = "telephone", length = 20)
+    private String telephone;
+
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation;
 
@@ -161,6 +165,15 @@ public class User implements UserDetails {
 
     public void setActif(Boolean actif) {
         this.actif = actif;
+        this.dateModification = LocalDateTime.now();
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
         this.dateModification = LocalDateTime.now();
     }
 

@@ -50,12 +50,12 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
     @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId AND p.noteGlobale IS NOT NULL ORDER BY p.noteGlobale DESC")
     List<Performance> findTopPerformancesByPlayer(@Param("playerId") Long playerId);
 
-    // Statistiques moyennes par joueur
-    @Query("SELECT AVG(p.attaquesTotales), AVG(p.attaquesReussies), AVG(p.aces), AVG(p.blocs), AVG(p.noteGlobale) FROM Performance p WHERE p.player.id = :playerId")
+    // Statistiques moyennes par joueur (attaques/blocs retirés)
+    @Query("SELECT AVG(p.aces), AVG(p.noteGlobale) FROM Performance p WHERE p.player.id = :playerId")
     Object[] getAverageStatsByPlayer(@Param("playerId") Long playerId);
 
-    // Statistiques totales par joueur
-    @Query("SELECT SUM(p.attaquesTotales), SUM(p.attaquesReussies), SUM(p.aces), SUM(p.blocs), SUM(p.defenses) FROM Performance p WHERE p.player.id = :playerId")
+    // Statistiques totales par joueur (attaques/blocs retirés)
+    @Query("SELECT SUM(p.aces) FROM Performance p WHERE p.player.id = :playerId")
     Object[] getTotalStatsByPlayer(@Param("playerId") Long playerId);
 
     // Évolution des performances (derniers N matchs)

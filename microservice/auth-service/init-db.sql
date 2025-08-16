@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     mot_de_passe VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL CHECK (role IN ('ADMIN', 'COACH', 'JOUEUR', 'RESPONSABLE_FINANCIER', 'STAFF_MEDICAL', 'INVITE')),
     actif BOOLEAN DEFAULT TRUE,
+    telephone VARCHAR(20),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP
 );
@@ -17,11 +18,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_actif ON users(actif);
+CREATE INDEX IF NOT EXISTS idx_users_telephone ON users(telephone);
 
 -- Insertion de données de test (seulement si la table est vide)
-INSERT INTO users (nom, prenom, email, mot_de_passe, role, actif, date_creation) 
-SELECT 'Admin', 'System', 'admin@cok.tn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'ADMIN', true, CURRENT_TIMESTAMP
+INSERT INTO users (nom, prenom, email, mot_de_passe, role, actif, telephone, date_creation) 
+SELECT 'Admin', 'System', 'admin@cok.tn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'ADMIN', true, '+21600000000', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@cok.tn');
 
 -- Vérification des données insérées
-SELECT id, nom, prenom, email, role, actif FROM users;
+SELECT id, nom, prenom, email, telephone, role, actif FROM users;

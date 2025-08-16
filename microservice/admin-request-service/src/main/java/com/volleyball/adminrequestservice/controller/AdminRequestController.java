@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -123,19 +122,6 @@ public class AdminRequestController {
     }
 
     /**
-     * Récupérer les demandes assignées à un utilisateur
-     */
-    @GetMapping("/assigned")
-    public ResponseEntity<List<AdminRequest>> getAssignedRequests(@RequestParam("assignedTo") Long assignedTo) {
-        try {
-            List<AdminRequest> requests = adminRequestService.getAssignedRequests(assignedTo);
-            return new ResponseEntity<>(requests, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
      * Récupérer les demandes en attente
      */
     @GetMapping("/pending")
@@ -201,19 +187,6 @@ public class AdminRequestController {
     }
 
     /**
-     * Récupérer les demandes prioritaires assignées
-     */
-    @GetMapping("/high-priority-assigned")
-    public ResponseEntity<List<AdminRequest>> getHighPriorityAssignedRequests(@RequestParam("assignedTo") Long assignedTo) {
-        try {
-            List<AdminRequest> requests = adminRequestService.getHighPriorityAssignedRequests(assignedTo);
-            return new ResponseEntity<>(requests, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
      * Mettre à jour une demande
      */
     @PutMapping("/update")
@@ -238,55 +211,6 @@ public class AdminRequestController {
             return new ResponseEntity<>(submittedRequest, HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Assigner une demande
-     */
-    @PutMapping("/assign")
-    public ResponseEntity<AdminRequest> assignRequest(@RequestParam("id") Long id, @RequestParam("assignedTo") Long assignedTo) {
-        try {
-            AdminRequest assignedRequest = adminRequestService.assignRequest(id, assignedTo);
-            return new ResponseEntity<>(assignedRequest, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Approuver une demande
-     */
-    @PutMapping("/approve")
-    public ResponseEntity<AdminRequest> approveRequest(@RequestParam("id") Long id, 
-                                                      @RequestParam("approvedBy") Long approvedBy,
-                                                      @RequestParam(value = "comments", required = false) String comments) {
-        try {
-            AdminRequest approvedRequest = adminRequestService.approveRequest(id, approvedBy, comments);
-            return new ResponseEntity<>(approvedRequest, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Rejeter une demande
-     */
-    @PutMapping("/reject")
-    public ResponseEntity<AdminRequest> rejectRequest(@RequestParam("id") Long id, 
-                                                     @RequestParam("reason") String reason,
-                                                     @RequestParam("rejectedBy") Long rejectedBy) {
-        try {
-            AdminRequest rejectedRequest = adminRequestService.rejectRequest(id, reason, rejectedBy);
-            return new ResponseEntity<>(rejectedRequest, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }

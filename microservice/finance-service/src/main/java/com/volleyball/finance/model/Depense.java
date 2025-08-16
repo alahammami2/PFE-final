@@ -14,9 +14,7 @@ public class Depense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotNull(message = "L'ID dépense est obligatoire")
-    @Column(name = "id_depense", nullable = false)
-    private Integer idDepense;
+    // id_depense supprimé
     
     @NotNull(message = "Le montant est obligatoire")
     @Positive(message = "Le montant doit être positif")
@@ -31,18 +29,25 @@ public class Depense {
     @Column(name = "description", nullable = false, length = 500)
     private String description;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categorie_budget_id", nullable = false)
-    private CategorieBudget categorieBudget;
+    // Relation avec categorie_budget supprimée
+    
+    @NotBlank(message = "Le statut est obligatoire")
+    @Column(name = "statut", nullable = false, length = 50)
+    private String statut;
+
+    @NotBlank(message = "La catégorie est obligatoire")
+    @Column(name = "categorie", nullable = false, length = 100)
+    private String categorie;
     
     // Constructeurs
     public Depense() {}
     
-    public Depense(Integer idDepense, Double montant, LocalDate date, String description) {
-        this.idDepense = idDepense;
+    public Depense(Double montant, LocalDate date, String description, String statut, String categorie) {
         this.montant = montant;
         this.date = date;
         this.description = description;
+        this.statut = statut;
+        this.categorie = categorie;
     }
     
     // Getters et Setters
@@ -54,13 +59,6 @@ public class Depense {
         this.id = id;
     }
     
-    public Integer getIdDepense() {
-        return idDepense;
-    }
-    
-    public void setIdDepense(Integer idDepense) {
-        this.idDepense = idDepense;
-    }
     
     public Double getMontant() {
         return montant;
@@ -86,33 +84,35 @@ public class Depense {
         this.description = description;
     }
     
-    public CategorieBudget getCategorieBudget() {
-        return categorieBudget;
-    }
-    
-    public void setCategorieBudget(CategorieBudget categorieBudget) {
-        this.categorieBudget = categorieBudget;
-    }
+    public String getStatut() { return statut; }
+
+    public void setStatut(String statut) { this.statut = statut; }
+
+    public String getCategorie() { return categorie; }
+
+    public void setCategorie(String categorie) { this.categorie = categorie; }
     
     // Méthodes métier
     public void consulter() {
-        System.out.println("Consultation de la dépense: " + idDepense + " - " + description + " - Montant: " + montant);
+        System.out.println("Consultation de la dépense: " + id + " - " + description + " - Montant: " + montant);
     }
     
     public void mettreAJour(Double nouveauMontant, String nouvelleDescription) {
         this.montant = nouveauMontant;
         this.description = nouvelleDescription;
-        System.out.println("Dépense mise à jour: " + idDepense);
+        System.out.println("Dépense mise à jour: " + id);
     }
     
     @Override
     public String toString() {
         return "Depense{" +
                 "id=" + id +
-                ", idDepense=" + idDepense +
+                
                 ", montant=" + montant +
                 ", date=" + date +
                 ", description='" + description + '\'' +
+                ", statut='" + statut + '\'' +
+                ", categorie='" + categorie + '\'' +
                 '}';
     }
 }

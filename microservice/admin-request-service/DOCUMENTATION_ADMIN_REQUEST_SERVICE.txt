@@ -327,7 +327,7 @@ docker-compose logs postgres
 ## 📈 Évolutions Futures
 
 ### Fonctionnalités à ajouter
-1. **Notifications**: Intégration avec le messaging-service
+1. **Notifications**: (intégration messaging-service retirée)
 2. **Workflow**: Étapes de validation personnalisables
 3. **Documents**: Gestion des pièces jointes
 4. **Historique**: Audit trail des modifications

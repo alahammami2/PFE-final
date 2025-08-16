@@ -13,11 +13,12 @@ public class UserResponse {
     private Role role;
     private Boolean actif;
     private LocalDateTime dateCreation;
+    private String telephone;
 
     // Constructeurs
     public UserResponse() {}
 
-    public UserResponse(Long id, String nom, String prenom, String email, Role role, Boolean actif, LocalDateTime dateCreation) {
+    public UserResponse(Long id, String nom, String prenom, String email, Role role, Boolean actif, LocalDateTime dateCreation, String telephone) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -25,6 +26,7 @@ public class UserResponse {
         this.role = role;
         this.actif = actif;
         this.dateCreation = dateCreation;
+        this.telephone = telephone;
     }
 
     // Getters et Setters
@@ -82,5 +84,13 @@ public class UserResponse {
 
     public void setDateCreation(LocalDateTime dateCreation) {
         this.dateCreation = dateCreation;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
     }
 }

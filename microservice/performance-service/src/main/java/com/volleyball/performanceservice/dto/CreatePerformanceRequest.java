@@ -19,19 +19,12 @@ public class CreatePerformanceRequest {
     @NotNull(message = "Le type de performance est obligatoire")
     private TypePerformance typePerformance;
 
-    // Statistiques offensives
-    @Min(value = 0, message = "Le nombre d'attaques ne peut pas être négatif")
-    private Integer attaquesTotales = 0;
-
-    @Min(value = 0, message = "Le nombre d'attaques réussies ne peut pas être négatif")
-    private Integer attaquesReussies = 0;
+    // Statistiques offensives (attaques supprimées)
 
     @Min(value = 0, message = "Le nombre d'aces ne peut pas être négatif")
     private Integer aces = 0;
 
-    // Statistiques défensives
-    @Min(value = 0, message = "Le nombre de blocs ne peut pas être négatif")
-    private Integer blocs = 0;
+    // Statistiques défensives (blocs supprimés)
 
     @Min(value = 0, message = "Le nombre de réceptions ne peut pas être négatif")
     private Integer receptionsTotales = 0;
@@ -39,8 +32,7 @@ public class CreatePerformanceRequest {
     @Min(value = 0, message = "Le nombre de réceptions réussies ne peut pas être négatif")
     private Integer receptionsReussies = 0;
 
-    @Min(value = 0, message = "Le nombre de défenses ne peut pas être négatif")
-    private Integer defenses = 0;
+
 
     // Statistiques de service
     @Min(value = 0, message = "Le nombre de services ne peut pas être négatif")
@@ -49,9 +41,7 @@ public class CreatePerformanceRequest {
     @Min(value = 0, message = "Le nombre de services réussis ne peut pas être négatif")
     private Integer servicesReussis = 0;
 
-    // Erreurs
-    @Min(value = 0, message = "Le nombre d'erreurs d'attaque ne peut pas être négatif")
-    private Integer erreursAttaque = 0;
+    // Erreurs (erreurs d'attaque supprimées)
 
     @Min(value = 0, message = "Le nombre d'erreurs de service ne peut pas être négatif")
     private Integer erreursService = 0;
@@ -60,8 +50,7 @@ public class CreatePerformanceRequest {
     private Integer erreursReception = 0;
 
     // Temps de jeu
-    @Min(value = 0, message = "Le temps de jeu ne peut pas être négatif")
-    private Integer tempsJeuMinutes = 0;
+
 
     // Note globale (sur 10)
     @DecimalMin(value = "0.0", message = "La note ne peut pas être négative")
@@ -106,21 +95,7 @@ public class CreatePerformanceRequest {
         this.typePerformance = typePerformance;
     }
 
-    public Integer getAttaquesTotales() {
-        return attaquesTotales;
-    }
-
-    public void setAttaquesTotales(Integer attaquesTotales) {
-        this.attaquesTotales = attaquesTotales;
-    }
-
-    public Integer getAttaquesReussies() {
-        return attaquesReussies;
-    }
-
-    public void setAttaquesReussies(Integer attaquesReussies) {
-        this.attaquesReussies = attaquesReussies;
-    }
+    // Attaques supprimées
 
     public Integer getAces() {
         return aces;
@@ -130,13 +105,7 @@ public class CreatePerformanceRequest {
         this.aces = aces;
     }
 
-    public Integer getBlocs() {
-        return blocs;
-    }
-
-    public void setBlocs(Integer blocs) {
-        this.blocs = blocs;
-    }
+    // Blocs supprimés
 
     public Integer getReceptionsTotales() {
         return receptionsTotales;
@@ -154,13 +123,7 @@ public class CreatePerformanceRequest {
         this.receptionsReussies = receptionsReussies;
     }
 
-    public Integer getDefenses() {
-        return defenses;
-    }
 
-    public void setDefenses(Integer defenses) {
-        this.defenses = defenses;
-    }
 
     public Integer getServicesTotaux() {
         return servicesTotaux;
@@ -178,13 +141,7 @@ public class CreatePerformanceRequest {
         this.servicesReussis = servicesReussis;
     }
 
-    public Integer getErreursAttaque() {
-        return erreursAttaque;
-    }
-
-    public void setErreursAttaque(Integer erreursAttaque) {
-        this.erreursAttaque = erreursAttaque;
-    }
+    // Erreurs d'attaque supprimées
 
     public Integer getErreursService() {
         return erreursService;
@@ -202,13 +159,7 @@ public class CreatePerformanceRequest {
         this.erreursReception = erreursReception;
     }
 
-    public Integer getTempsJeuMinutes() {
-        return tempsJeuMinutes;
-    }
 
-    public void setTempsJeuMinutes(Integer tempsJeuMinutes) {
-        this.tempsJeuMinutes = tempsJeuMinutes;
-    }
 
     public Double getNoteGlobale() {
         return noteGlobale;
@@ -232,8 +183,7 @@ public class CreatePerformanceRequest {
                 "playerId=" + playerId +
                 ", datePerformance=" + datePerformance +
                 ", typePerformance=" + typePerformance +
-                ", attaquesTotales=" + attaquesTotales +
-                ", attaquesReussies=" + attaquesReussies +
+                
                 ", noteGlobale=" + noteGlobale +
                 '}';
     }

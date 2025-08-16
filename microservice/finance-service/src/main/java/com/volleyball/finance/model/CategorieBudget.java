@@ -8,29 +8,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "categories_budget")
+@Table(name = "recettes")
 public class CategorieBudget {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotNull(message = "L'ID catégorie est obligatoire")
-    @Column(name = "id_categorie", nullable = false)
-    private Integer idCategorie;
+    @NotNull(message = "La date est obligatoire")
+    @Column(name = "date", nullable = false)
+    private java.time.LocalDate date;
+
+    @NotBlank(message = "La description est obligatoire")
+    @Column(name = "description", nullable = false)
+    private String description;
+
+    @NotNull(message = "Le montant est obligatoire")
+    @PositiveOrZero(message = "Le montant doit être positif ou zéro")
+    @Column(name = "montant", nullable = false)
+    private Double montant;
+
+    @NotBlank(message = "La catégorie est obligatoire")
+    @Column(name = "categorie", nullable = false)
+    private String categorie;
     
-    @NotBlank(message = "Le nom de la catégorie est obligatoire")
-    @Column(name = "nom_categorie", nullable = false)
-    private String nomCategorie;
-    
-    @NotNull(message = "Le montant alloué est obligatoire")
-    @PositiveOrZero(message = "Le montant alloué doit être positif ou zéro")
-    @Column(name = "montant_alloue", nullable = false)
-    private Double montantAlloue;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "budget_id", nullable = false)
-    private Budget budget;
+    // Lien vers Budget supprimé (table budgets indépendante)
     
     @OneToMany(mappedBy = "categorieBudget", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Depense> depenses = new ArrayList<>();
@@ -38,10 +40,11 @@ public class CategorieBudget {
     // Constructeurs
     public CategorieBudget() {}
     
-    public CategorieBudget(Integer idCategorie, String nomCategorie, Double montantAlloue) {
-        this.idCategorie = idCategorie;
-        this.nomCategorie = nomCategorie;
-        this.montantAlloue = montantAlloue;
+    public CategorieBudget(java.time.LocalDate date, String description, Double montant, String categorie) {
+        this.date = date;
+        this.description = description;
+        this.montant = montant;
+        this.categorie = categorie;
     }
     
     // Getters et Setters
@@ -53,37 +56,23 @@ public class CategorieBudget {
         this.id = id;
     }
     
-    public Integer getIdCategorie() {
-        return idCategorie;
-    }
+    public java.time.LocalDate getDate() { return date; }
+
+    public void setDate(java.time.LocalDate date) { this.date = date; }
+
+    public String getDescription() { return description; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public Double getMontant() { return montant; }
+
+    public void setMontant(Double montant) { this.montant = montant; }
+
+    public String getCategorie() { return categorie; }
+
+    public void setCategorie(String categorie) { this.categorie = categorie; }
     
-    public void setIdCategorie(Integer idCategorie) {
-        this.idCategorie = idCategorie;
-    }
-    
-    public String getNomCategorie() {
-        return nomCategorie;
-    }
-    
-    public void setNomCategorie(String nomCategorie) {
-        this.nomCategorie = nomCategorie;
-    }
-    
-    public Double getMontantAlloue() {
-        return montantAlloue;
-    }
-    
-    public void setMontantAlloue(Double montantAlloue) {
-        this.montantAlloue = montantAlloue;
-    }
-    
-    public Budget getBudget() {
-        return budget;
-    }
-    
-    public void setBudget(Budget budget) {
-        this.budget = budget;
-    }
+    // Champ budget supprimé: getters/setters retirés
     
     public List<Depense> getDepenses() {
         return depenses;
@@ -95,27 +84,25 @@ public class CategorieBudget {
     
     // Méthodes métier
     public void mettreAJour(Double nouveauMontant) {
-        this.montantAlloue = nouveauMontant;
-        System.out.println("Catégorie budget mise à jour: " + nomCategorie + " - Nouveau montant: " + montantAlloue);
+        this.montant = nouveauMontant;
     }
     
     public Double getMontantDepense() {
-        return depenses.stream()
-                .mapToDouble(Depense::getMontant)
-                .sum();
+        return depenses.stream().mapToDouble(Depense::getMontant).sum();
     }
     
     public Double getMontantRestant() {
-        return montantAlloue - getMontantDepense();
+        return (montant != null ? montant : 0.0) - getMontantDepense();
     }
     
     @Override
     public String toString() {
         return "CategorieBudget{" +
                 "id=" + id +
-                ", idCategorie=" + idCategorie +
-                ", nomCategorie='" + nomCategorie + '\'' +
-                ", montantAlloue=" + montantAlloue +
+                ", date=" + date +
+                ", description='" + description + '\'' +
+                ", montant=" + montant +
+                ", categorie='" + categorie + '\'' +
                 '}';
     }
 }

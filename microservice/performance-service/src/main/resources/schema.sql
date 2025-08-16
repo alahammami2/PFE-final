@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS players (
     numero_maillot INTEGER UNIQUE CHECK (numero_maillot > 0 AND numero_maillot <= 99),
     taille_cm INTEGER CHECK (taille_cm > 0),
     poids_kg DECIMAL(5,2) CHECK (poids_kg > 0),
+    salaire DECIMAL(12,2) CHECK (salaire >= 0),
     statut VARCHAR(20) NOT NULL DEFAULT 'ACTIF' CHECK (statut IN ('ACTIF', 'BLESSE', 'SUSPENDU', 'INACTIF', 'TRANSFERE')),
     date_debut_equipe DATE,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
@@ -73,28 +74,22 @@ CREATE TABLE IF NOT EXISTS performances (
     date_performance DATE NOT NULL,
     type_performance VARCHAR(20) NOT NULL CHECK (type_performance IN ('MATCH', 'ENTRAINEMENT', 'COMPETITION', 'TOURNOI', 'AMICAL')),
     
-    -- Statistiques offensives
-    attaques_totales INTEGER NOT NULL DEFAULT 0 CHECK (attaques_totales >= 0),
-    attaques_reussies INTEGER NOT NULL DEFAULT 0 CHECK (attaques_reussies >= 0),
+    -- Statistiques offensives (attaques supprimées)
     aces INTEGER NOT NULL DEFAULT 0 CHECK (aces >= 0),
     
-    -- Statistiques défensives
-    blocs INTEGER NOT NULL DEFAULT 0 CHECK (blocs >= 0),
+    -- Statistiques défensives (blocs supprimés)
     receptions_totales INTEGER NOT NULL DEFAULT 0 CHECK (receptions_totales >= 0),
     receptions_reussies INTEGER NOT NULL DEFAULT 0 CHECK (receptions_reussies >= 0),
-    defenses INTEGER NOT NULL DEFAULT 0 CHECK (defenses >= 0),
     
     -- Statistiques de service
     services_totaux INTEGER NOT NULL DEFAULT 0 CHECK (services_totaux >= 0),
     services_reussis INTEGER NOT NULL DEFAULT 0 CHECK (services_reussis >= 0),
     
-    -- Erreurs
-    erreurs_attaque INTEGER NOT NULL DEFAULT 0 CHECK (erreurs_attaque >= 0),
+    -- Erreurs (erreurs d'attaque supprimées)
     erreurs_service INTEGER NOT NULL DEFAULT 0 CHECK (erreurs_service >= 0),
     erreurs_reception INTEGER NOT NULL DEFAULT 0 CHECK (erreurs_reception >= 0),
     
-    -- Temps et évaluation
-    temps_jeu_minutes INTEGER NOT NULL DEFAULT 0 CHECK (temps_jeu_minutes >= 0),
+    -- Évaluation
     note_globale DECIMAL(3,1) CHECK (note_globale >= 0 AND note_globale <= 10),
     commentaires VARCHAR(1000),
     
@@ -102,7 +97,6 @@ CREATE TABLE IF NOT EXISTS performances (
     date_modification TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Contraintes de cohérence des statistiques
-    CONSTRAINT chk_attaques_coherence CHECK (attaques_reussies <= attaques_totales),
     CONSTRAINT chk_receptions_coherence CHECK (receptions_reussies <= receptions_totales),
     CONSTRAINT chk_services_coherence CHECK (services_reussis <= services_totaux),
     
@@ -137,6 +131,28 @@ CREATE INDEX IF NOT EXISTS idx_performances_player_type ON performances(player_i
 COMMENT ON TABLE players IS 'Table des joueurs de volleyball avec leurs informations personnelles et sportives';
 COMMENT ON TABLE absences IS 'Table des absences des joueurs avec gestion des statuts et justifications';
 COMMENT ON TABLE performances IS 'Table des performances détaillées des joueurs lors des matchs et entraînements';
+
+-- =================================================================
+-- TABLE PERFORMANCE_FILES (Fichiers associés aux performances)
+-- =================================================================
+CREATE TABLE IF NOT EXISTS performance_files (
+    id BIGSERIAL PRIMARY KEY,
+    original_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(10) NOT NULL,
+    file_size BIGINT NOT NULL CHECK (file_size > 0),
+    file_path VARCHAR(500) NOT NULL,
+    upload_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    performance_id BIGINT REFERENCES performances(id) ON DELETE SET NULL
+);
+
+-- Index pour optimiser les recherches
+CREATE INDEX IF NOT EXISTS idx_performance_files_original_name ON performance_files(original_name);
+CREATE INDEX IF NOT EXISTS idx_performance_files_file_type ON performance_files(file_type);
+CREATE INDEX IF NOT EXISTS idx_performance_files_performance_id ON performance_files(performance_id);
+CREATE INDEX IF NOT EXISTS idx_performance_files_upload_date ON performance_files(upload_date);
+CREATE INDEX IF NOT EXISTS idx_performance_files_file_size ON performance_files(file_size);
+
+COMMENT ON TABLE performance_files IS 'Table des fichiers associés aux performances';
 
 COMMENT ON VIEW v_player_average_stats IS 'Vue des statistiques moyennes par joueur actif';
 COMMENT ON VIEW v_current_absences IS 'Vue des absences actuellement en cours';

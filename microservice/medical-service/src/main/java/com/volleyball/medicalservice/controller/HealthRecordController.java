@@ -1,7 +1,6 @@
 package com.volleyball.medicalservice.controller;
 
 import com.volleyball.medicalservice.model.HealthRecord;
-import com.volleyball.medicalservice.model.HealthStatus;
 import com.volleyball.medicalservice.service.HealthRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -110,7 +109,7 @@ public class HealthRecordController {
      * Récupère les dossiers par statut
      */
     @GetMapping("/statut/{status}")
-    public ResponseEntity<List<HealthRecord>> getHealthRecordsByStatus(@PathVariable HealthStatus status) {
+    public ResponseEntity<List<HealthRecord>> getHealthRecordsByStatus(@PathVariable com.volleyball.medicalservice.model.MedicalStatus status) {
         try {
             List<HealthRecord> records = healthRecordService.getHealthRecordsByStatus(status);
             return new ResponseEntity<>(records, HttpStatus.OK);
@@ -153,7 +152,7 @@ public class HealthRecordController {
      * Met à jour le statut de santé
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<HealthRecord> updateHealthStatus(@PathVariable Long id, @RequestParam HealthStatus status) {
+    public ResponseEntity<HealthRecord> updateHealthStatus(@PathVariable Long id, @RequestParam com.volleyball.medicalservice.model.MedicalStatus status) {
         try {
             HealthRecord updatedRecord = healthRecordService.updateHealthStatus(id, status);
             return new ResponseEntity<>(updatedRecord, HttpStatus.OK);

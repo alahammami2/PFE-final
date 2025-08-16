@@ -54,57 +54,91 @@ ON CONFLICT DO NOTHING;
 -- INSERTION DES PERFORMANCES DE TEST
 -- =================================================================
 
-INSERT INTO performances (player_id, date_performance, type_performance, attaques_totales, attaques_reussies, aces, blocs, receptions_totales, receptions_reussies, defenses, services_totaux, services_reussis, erreurs_attaque, erreurs_service, erreurs_reception, temps_jeu_minutes, note_globale, commentaires) VALUES
+INSERT INTO performances (player_id, date_performance, type_performance, aces, receptions_totales, receptions_reussies, services_totaux, services_reussis, erreurs_service, erreurs_reception, note_globale, commentaires) VALUES
 
 -- Performances de Mohamed (Passeur)
-(1, '2024-07-01', 'MATCH', 5, 4, 2, 1, 15, 13, 8, 20, 18, 1, 2, 2, 90, 8.5, 'Excellente distribution, bon leadership'),
-(1, '2024-07-03', 'ENTRAINEMENT', 8, 6, 1, 0, 20, 17, 5, 25, 22, 2, 3, 3, 120, 7.5, 'Bon entraînement, à améliorer la précision'),
-(1, '2024-07-05', 'MATCH', 6, 5, 3, 2, 18, 16, 10, 22, 20, 1, 2, 2, 95, 9.0, 'Performance exceptionnelle'),
+(1, '2024-07-01', 'MATCH', 2, 15, 13, 8, 20, 18, 2, 2, 90, 8.5, 'Excellente distribution, bon leadership'),
+(1, '2024-07-03', 'ENTRAINEMENT', 1, 20, 17, 5, 25, 22, 3, 3, 120, 7.5, 'Bon entraînement, à améliorer la précision'),
+(1, '2024-07-05', 'MATCH', 3, 18, 16, 10, 22, 20, 2, 2, 95, 9.0, 'Performance exceptionnelle'),
 
 -- Performances de Youssef (Attaquant)
-(2, '2024-07-01', 'MATCH', 25, 18, 1, 3, 8, 6, 4, 15, 12, 7, 3, 2, 85, 8.0, 'Bon pourcentage d''attaque'),
-(2, '2024-07-03', 'ENTRAINEMENT', 30, 20, 0, 2, 10, 8, 3, 18, 15, 10, 3, 2, 110, 7.0, 'Beaucoup d''erreurs d''attaque'),
-(2, '2024-07-05', 'MATCH', 28, 22, 2, 4, 12, 10, 6, 16, 14, 6, 2, 2, 90, 8.5, 'Très bonne performance offensive'),
+(2, '2024-07-01', 'MATCH', 1, 8, 6, 4, 15, 12, 3, 2, 85, 8.0, 'Bon pourcentage d''attaque'),
+(2, '2024-07-03', 'ENTRAINEMENT', 0, 10, 8, 3, 18, 15, 3, 2, 110, 7.0, 'Beaucoup d''erreurs d''attaque'),
+(2, '2024-07-05', 'MATCH', 2, 12, 10, 6, 16, 14, 2, 2, 90, 8.5, 'Très bonne performance offensive'),
 
 -- Performances d'Amine (Central)
-(3, '2024-07-01', 'MATCH', 15, 10, 0, 8, 5, 4, 2, 10, 8, 5, 2, 1, 80, 7.5, 'Bon travail au bloc'),
-(3, '2024-07-03', 'ENTRAINEMENT', 18, 12, 1, 6, 8, 6, 3, 12, 10, 6, 2, 2, 100, 7.0, 'Entraînement correct'),
-(3, '2024-07-05', 'MATCH', 20, 15, 1, 10, 6, 5, 4, 14, 12, 5, 2, 1, 85, 8.5, 'Excellente performance au bloc'),
+(3, '2024-07-01', 'MATCH', 0, 5, 4, 2, 10, 8, 2, 1, 80, 7.5, 'Bon travail en défense'),
+(3, '2024-07-03', 'ENTRAINEMENT', 1, 8, 6, 3, 12, 10, 2, 2, 100, 7.0, 'Entraînement correct'),
+(3, '2024-07-05', 'MATCH', 1, 6, 5, 4, 14, 12, 2, 1, 85, 8.5, 'Excellente performance défensive'),
 
 -- Performances de Mehdi (Libéro)
-(4, '2024-07-01', 'MATCH', 0, 0, 0, 0, 35, 30, 15, 0, 0, 0, 0, 5, 90, 8.5, 'Excellente défense'),
-(4, '2024-07-03', 'ENTRAINEMENT', 0, 0, 0, 0, 40, 32, 18, 0, 0, 0, 0, 8, 120, 7.5, 'Bon entraînement défensif'),
-(4, '2024-07-05', 'MATCH', 0, 0, 0, 0, 38, 35, 20, 0, 0, 0, 0, 3, 95, 9.0, 'Performance défensive exceptionnelle'),
+(4, '2024-07-01', 'MATCH', 0, 35, 30, 15, 0, 0, 0, 5, 90, 8.5, 'Excellente défense'),
+(4, '2024-07-03', 'ENTRAINEMENT', 0, 40, 32, 18, 0, 0, 0, 8, 120, 7.5, 'Bon entraînement défensif'),
+(4, '2024-07-05', 'MATCH', 0, 38, 35, 20, 0, 0, 0, 3, 95, 9.0, 'Performance défensive exceptionnelle'),
 
 -- Performances de Karim (Pointu)
-(5, '2024-07-01', 'MATCH', 22, 15, 3, 2, 12, 9, 5, 18, 15, 7, 3, 3, 88, 7.5, 'Bon match général'),
-(5, '2024-07-03', 'ENTRAINEMENT', 25, 18, 2, 1, 15, 12, 4, 20, 17, 7, 3, 3, 115, 7.5, 'Entraînement régulier'),
+(5, '2024-07-01', 'MATCH', 3, 12, 9, 5, 18, 15, 3, 3, 88, 7.5, 'Bon match général'),
+(5, '2024-07-03', 'ENTRAINEMENT', 2, 15, 12, 4, 20, 17, 3, 3, 115, 7.5, 'Entraînement régulier'),
 
 -- Performances de Sami (Récepteur-Attaquant)
-(6, '2024-07-01', 'MATCH', 20, 14, 1, 1, 25, 20, 8, 16, 13, 6, 3, 5, 92, 7.0, 'Performance mitigée'),
-(6, '2024-07-03', 'ENTRAINEMENT', 24, 17, 2, 2, 28, 23, 10, 18, 15, 7, 3, 5, 118, 7.5, 'Amélioration notable'),
+(6, '2024-07-01', 'MATCH', 1, 25, 20, 8, 16, 13, 3, 5, 92, 7.0, 'Performance mitigée'),
+(6, '2024-07-03', 'ENTRAINEMENT', 2, 28, 23, 10, 18, 15, 3, 5, 118, 7.5, 'Amélioration notable'),
 
 -- Performances des joueurs de réserve
-(7, '2024-07-10', 'ENTRAINEMENT', 12, 8, 1, 0, 18, 15, 6, 20, 17, 4, 3, 3, 90, 7.0, 'Bon potentiel'),
-(8, '2024-07-10', 'ENTRAINEMENT', 18, 12, 0, 2, 10, 8, 3, 15, 12, 6, 3, 2, 85, 6.5, 'Doit s''améliorer'),
-(9, '2024-07-10', 'ENTRAINEMENT', 14, 9, 0, 5, 6, 5, 2, 12, 10, 5, 2, 1, 80, 7.0, 'Bon travail au bloc'),
-(10, '2024-07-10', 'ENTRAINEMENT', 0, 0, 0, 0, 30, 25, 12, 0, 0, 0, 0, 5, 90, 7.5, 'Bonne défense'),
+(7, '2024-07-10', 'ENTRAINEMENT', 1, 18, 15, 6, 20, 17, 3, 3, 90, 7.0, 'Bon potentiel'),
+(8, '2024-07-10', 'ENTRAINEMENT', 0, 10, 8, 3, 15, 12, 3, 2, 85, 6.5, 'Doit s''améliorer'),
+(9, '2024-07-10', 'ENTRAINEMENT', 0, 6, 5, 2, 12, 10, 2, 1, 80, 7.0, 'Bon travail défensif'),
+(10, '2024-07-10', 'ENTRAINEMENT', 0, 30, 25, 12, 0, 0, 0, 5, 90, 7.5, 'Bonne défense'),
 
 -- Performances de compétition
-(1, '2024-07-15', 'COMPETITION', 7, 6, 4, 2, 20, 18, 12, 25, 23, 1, 2, 2, 100, 9.5, 'Performance exceptionnelle en compétition'),
-(2, '2024-07-15', 'COMPETITION', 30, 24, 3, 5, 10, 8, 6, 18, 16, 6, 2, 2, 95, 9.0, 'Excellent match de compétition'),
-(3, '2024-07-15', 'COMPETITION', 22, 17, 2, 12, 8, 7, 5, 16, 14, 5, 2, 1, 90, 9.0, 'Domination au bloc'),
-(4, '2024-07-15', 'COMPETITION', 0, 0, 0, 0, 42, 38, 22, 0, 0, 0, 0, 4, 100, 9.5, 'Défense de haut niveau'),
+(1, '2024-07-15', 'COMPETITION', 4, 20, 18, 12, 25, 23, 2, 2, 100, 9.5, 'Performance exceptionnelle en compétition'),
+(2, '2024-07-15', 'COMPETITION', 3, 10, 8, 6, 18, 16, 2, 2, 95, 9.0, 'Excellent match de compétition'),
+(3, '2024-07-15', 'COMPETITION', 2, 8, 7, 5, 16, 14, 2, 1, 90, 9.0, 'Bonne présence au filet'),
+(4, '2024-07-15', 'COMPETITION', 0, 42, 38, 22, 0, 0, 0, 4, 100, 9.5, 'Défense de haut niveau'),
 
 -- Performances récentes (dernière semaine)
-(1, '2024-08-01', 'MATCH', 8, 7, 3, 1, 16, 14, 9, 23, 21, 1, 2, 2, 88, 8.5, 'Très bon match récent'),
-(2, '2024-08-01', 'MATCH', 26, 19, 2, 3, 9, 7, 4, 17, 15, 7, 2, 2, 86, 8.0, 'Performance solide'),
-(4, '2024-08-01', 'MATCH', 0, 0, 0, 0, 36, 32, 16, 0, 0, 0, 0, 4, 88, 8.5, 'Défense efficace'),
+(1, '2024-08-01', 'MATCH', 3, 16, 14, 23, 21, 2, 2, 8.5, 'Très bon match récent'),
+(2, '2024-08-01', 'MATCH', 2, 9, 7, 17, 15, 2, 2, 8.0, 'Performance solide'),
+(4, '2024-08-01', 'MATCH', 0, 36, 32, 0, 0, 0, 4, 8.5, 'Défense efficace'),
 
 -- Performances d'entraînement récentes
-(5, '2024-08-03', 'ENTRAINEMENT', 20, 15, 2, 2, 14, 11, 6, 19, 16, 5, 3, 3, 105, 7.5, 'Entraînement productif'),
-(6, '2024-08-03', 'ENTRAINEMENT', 22, 16, 1, 1, 26, 21, 9, 17, 14, 6, 3, 5, 110, 7.5, 'Progression constante')
+(5, '2024-08-03', 'ENTRAINEMENT', 2, 14, 11, 19, 16, 3, 3, 7.5, 'Entraînement productif'),
+(6, '2024-08-03', 'ENTRAINEMENT', 1, 26, 21, 17, 14, 3, 5, 7.5, 'Progression constante')
 ON CONFLICT (player_id, date_performance, type_performance) DO NOTHING;
+
+-- =================================================================
+-- INSERTION DES FICHIERS DE PERFORMANCE DE TEST
+-- =================================================================
+
+INSERT INTO performance_files (original_name, file_type, file_size, file_path, performance_id) VALUES
+-- Fichiers vidéo de matchs
+('match_2024_07_01_equipe_principale.mp4', 'mp4', 52428800, '/uploads/videos/match_2024_07_01_equipe_principale.mp4', 1),
+('match_2024_07_01_equipe_principale.mp4', 'mp4', 52428800, '/uploads/videos/match_2024_07_01_equipe_principale.mp4', 2),
+('match_2024_07_01_equipe_principale.mp4', 'mp4', 52428800, '/uploads/videos/match_2024_07_01_equipe_principale.mp4', 3),
+('match_2024_07_01_equipe_principale.mp4', 'mp4', 52428800, '/uploads/videos/match_2024_07_01_equipe_principale.mp4', 4),
+
+-- Fichiers d'analyse technique
+('analyse_technique_mohamed_2024_07_01.pdf', 'pdf', 2097152, '/uploads/analyses/analyse_technique_mohamed_2024_07_01.pdf', 1),
+('analyse_technique_youssef_2024_07_01.pdf', 'pdf', 2097152, '/uploads/analyses/analyse_technique_youssef_2024_07_01.pdf', 2),
+('analyse_technique_amine_2024_07_01.pdf', 'pdf', 2097152, '/uploads/analyses/analyse_technique_amine_2024_07_01.pdf', 3),
+
+-- Fichiers de statistiques
+('statistiques_match_2024_07_01.xlsx', 'xlsx', 1048576, '/uploads/statistiques/statistiques_match_2024_07_01.xlsx', 1),
+('statistiques_entrainement_2024_07_03.xlsx', 'xlsx', 1048576, '/uploads/statistiques/statistiques_entrainement_2024_07_03.xlsx', 2),
+
+-- Photos de match
+('photo_match_2024_07_01_01.jpg', 'jpg', 2097152, '/uploads/photos/photo_match_2024_07_01_01.jpg', 1),
+('photo_match_2024_07_01_02.jpg', 'jpg', 2097152, '/uploads/photos/photo_match_2024_07_01_02.jpg', 1),
+('photo_match_2024_07_01_03.jpg', 'jpg', 2097152, '/uploads/photos/photo_match_2024_07_01_03.jpg', 2),
+
+-- Fichiers de compétition
+('video_competition_2024_07_15.mp4', 'mp4', 104857600, '/uploads/competitions/video_competition_2024_07_15.mp4', 13),
+('analyse_competition_2024_07_15.pdf', 'pdf', 4194304, '/uploads/competitions/analyse_competition_2024_07_15.pdf', 13),
+
+-- Fichiers sans performance associée
+('rapport_general_equipe_2024.pdf', 'pdf', 5242880, '/uploads/rapports/rapport_general_equipe_2024.pdf', NULL),
+('planning_entrainements_2024.xlsx', 'xlsx', 1048576, '/uploads/plannings/planning_entrainements_2024.xlsx', NULL)
+ON CONFLICT DO NOTHING;
 
 -- =================================================================
 -- VÉRIFICATION DES DONNÉES INSÉRÉES

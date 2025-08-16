@@ -76,12 +76,29 @@ Table: performances
 -------------------
 - id (BIGSERIAL PRIMARY KEY) - Identifiant unique
 - player_id (BIGINT NOT NULL) - Référence vers le joueur
-- date_evaluation (DATE NOT NULL) - Date de l'évaluation
+- date_performance (DATE NOT NULL) - Date de la performance
 - type_performance (VARCHAR(20) NOT NULL) - Type de performance (ENUM)
-- note_globale (DECIMAL NOT NULL) - Note globale (0-10)
-- commentaire (VARCHAR(500)) - Commentaire sur la performance
+- aces (INTEGER DEFAULT 0) - Nombre d'aces
+- receptions_totales (INTEGER DEFAULT 0) - Nombre total de réceptions
+- receptions_reussies (INTEGER DEFAULT 0) - Nombre de réceptions réussies
+- services_totaux (INTEGER DEFAULT 0) - Nombre total de services
+- services_reussis (INTEGER DEFAULT 0) - Nombre de services réussis
+- erreurs_service (INTEGER DEFAULT 0) - Nombre d'erreurs de service
+- erreurs_reception (INTEGER DEFAULT 0) - Nombre d'erreurs de réception
+- note_globale (DECIMAL(3,1)) - Note globale (0-10)
+- commentaires (VARCHAR(1000)) - Commentaires sur la performance
 - date_creation (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date de création
 - date_modification (TIMESTAMP) - Date de dernière modification
+
+Table: performance_files
+------------------------
+- id (BIGSERIAL PRIMARY KEY) - Identifiant unique
+- original_name (VARCHAR(255) NOT NULL) - Nom original du fichier
+- file_type (VARCHAR(10) NOT NULL) - Type de fichier (pdf, mp4, jpg, etc.)
+- file_size (BIGINT NOT NULL) - Taille du fichier en octets
+- file_path (VARCHAR(500) NOT NULL) - Chemin de stockage du fichier
+- upload_date (TIMESTAMP DEFAULT CURRENT_TIMESTAMP) - Date d'upload
+- performance_id (BIGINT) - Référence optionnelle vers une performance
 
 Types de performance supportés:
 - ENTRAINEMENT: Performance en entraînement
@@ -92,6 +109,39 @@ Types de performance supportés:
 ================================================================================
 
 Base URL: http://localhost:8083/api/performance
+
+## ENDPOINTS PERFORMANCE FILES (Fichiers de performance)
+   ===================================================
+
+Base URL: http://localhost:8083/api/performance/files
+
+### CRUD Operations
+- **POST** `/files` - Créer un nouveau fichier de performance
+- **GET** `/files` - Lister tous les fichiers
+- **GET** `/files/{id}` - Obtenir un fichier par ID
+- **PUT** `/files/{id}` - Mettre à jour un fichier
+- **DELETE** `/files/{id}` - Supprimer un fichier
+
+### Recherche et Filtrage
+- **GET** `/files/performance/{performanceId}` - Fichiers d'une performance
+- **GET** `/files/type/{fileType}` - Fichiers par type (pdf, mp4, jpg, etc.)
+- **GET** `/files/min-size?minSize={size}` - Fichiers par taille minimale
+- **GET** `/files/period?dateDebut={debut}&dateFin={fin}` - Fichiers par période
+- **GET** `/files/search?searchTerm={term}` - Recherche par nom de fichier
+
+### Statistiques et Analyses
+- **GET** `/files/recent` - Fichiers récents (triés par date)
+- **GET** `/files/largest` - Fichiers les plus volumineux
+- **GET** `/files/statistics` - Statistiques générales des fichiers
+
+### Types de fichiers supportés
+- **Documents**: PDF, DOC, DOCX, XLS, XLSX
+- **Images**: JPG, JPEG, PNG
+- **Vidéos**: MP4, AVI, MOV
+- **Limite de taille**: 100 MB par fichier
+
+## ENDPOINTS PLAYERS (Joueurs)
+   ============================
 
 1. ENDPOINTS PLAYERS (Joueurs)
    ============================

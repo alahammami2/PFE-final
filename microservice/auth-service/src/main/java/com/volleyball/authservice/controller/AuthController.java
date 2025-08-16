@@ -91,7 +91,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole(),
                 user.getActif(),
-                user.getDateCreation()
+                user.getDateCreation(),
+                user.getTelephone()
             );
 
             logger.info("Utilisateur créé avec succès: {}", user.getEmail());
@@ -140,7 +141,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole(),
                 user.getActif(),
-                user.getDateCreation()
+                user.getDateCreation(),
+                user.getTelephone()
             );
 
             logger.info("Utilisateur modifié avec succès: {}", user.getEmail());
@@ -199,7 +201,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole(),
                 user.getActif(),
-                user.getDateCreation()
+                user.getDateCreation(),
+                user.getTelephone()
             );
 
             logger.info("Utilisateur récupéré avec succès: {}", user.getEmail());
@@ -235,7 +238,8 @@ public class AuthController {
                     user.getEmail(),
                     user.getRole(),
                     user.getActif(),
-                    user.getDateCreation()
+                    user.getDateCreation(),
+                    user.getTelephone()
                 ))
                 .collect(Collectors.toList());
 

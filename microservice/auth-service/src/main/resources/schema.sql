@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     mot_de_passe VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL CHECK (role IN ('ADMIN', 'COACH', 'JOUEUR', 'RESPONSABLE_FINANCIER', 'STAFF_MEDICAL', 'INVITE')),
     actif BOOLEAN DEFAULT TRUE,
+    telephone VARCHAR(20),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP
 );
@@ -22,3 +23,6 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- Créer un index sur le statut actif
 CREATE INDEX IF NOT EXISTS idx_users_actif ON users(actif);
+
+-- Index sur le téléphone (recherche éventuelle)
+CREATE INDEX IF NOT EXISTS idx_users_telephone ON users(telephone);
