@@ -3,14 +3,12 @@ package com.volleyball.performanceservice.service;
 import com.volleyball.performanceservice.dto.CreatePerformanceRequest;
 import com.volleyball.performanceservice.model.Performance;
 import com.volleyball.performanceservice.model.Player;
-import com.volleyball.performanceservice.model.TypePerformance;
 import com.volleyball.performanceservice.repository.PerformanceRepository;
 import com.volleyball.performanceservice.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,20 +34,12 @@ public class PerformanceService {
         Player player = playerRepository.findById(request.getPlayerId())
                 .orElseThrow(() -> new RuntimeException("Joueur non trouvé avec l'ID: " + request.getPlayerId()));
 
-        // Vérifier qu'une performance n'existe pas déjà pour ce joueur, cette date et ce type
-        if (performanceRepository.existsByPlayerIdAndDatePerformanceAndTypePerformance(
-                request.getPlayerId(), request.getDatePerformance(), request.getTypePerformance())) {
-            throw new RuntimeException("Une performance existe déjà pour ce joueur à cette date et pour ce type d'activité");
-        }
-
         // Validation des statistiques
         validatePerformanceStats(request);
 
         // Création de la performance
         Performance performance = new Performance();
         performance.setPlayer(player);
-        performance.setDatePerformance(request.getDatePerformance());
-        performance.setTypePerformance(request.getTypePerformance());
         
         // Statistiques offensives
         performance.setAces(request.getAces());
@@ -57,6 +47,7 @@ public class PerformanceService {
         // Statistiques défensives
         performance.setReceptionsTotales(request.getReceptionsTotales());
         performance.setReceptionsReussies(request.getReceptionsReussies());
+        performance.setBloc(request.getBloc());
         
         // Statistiques de service
         performance.setServicesTotaux(request.getServicesTotaux());
@@ -115,29 +106,7 @@ public class PerformanceService {
         return performanceRepository.findByPlayerId(playerId);
     }
 
-    /**
-     * Obtenir les performances par type
-     */
-    @Transactional(readOnly = true)
-    public List<Performance> getPerformancesByType(TypePerformance typePerformance) {
-        return performanceRepository.findByTypePerformance(typePerformance);
-    }
-
-    /**
-     * Obtenir les performances par période
-     */
-    @Transactional(readOnly = true)
-    public List<Performance> getPerformancesByPeriode(LocalDate dateDebut, LocalDate dateFin) {
-        return performanceRepository.findByPeriode(dateDebut, dateFin);
-    }
-
-    /**
-     * Obtenir les performances d'un joueur par période
-     */
-    @Transactional(readOnly = true)
-    public List<Performance> getPerformancesByPlayerAndPeriode(Long playerId, LocalDate dateDebut, LocalDate dateFin) {
-        return performanceRepository.findByPlayerAndPeriode(playerId, dateDebut, dateFin);
-    }
+    // Méthodes par type/période supprimées (colonnes supprimées)
 
     /**
      * Obtenir les dernières performances d'un joueur
@@ -162,6 +131,15 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public List<Performance> getTopPerformancesByPlayer(Long playerId) {
         return performanceRepository.findTopPerformancesByPlayer(playerId);
+    }
+
+    /**
+     * Obtenir la moyenne globale de la note sur toutes les performances
+     */
+    @Transactional(readOnly = true)
+    public Double getAverageGlobalNote() {
+        Double avg = performanceRepository.getAverageGlobalNote();
+        return avg != null ? avg : 0.0;
     }
 
     /**
@@ -195,12 +173,10 @@ public class PerformanceService {
         };
     }
 
-    /**
-     * Comparer les performances entre joueurs
-     */
+    // Comparaison des performances entre joueurs (moyenne globale)
     @Transactional(readOnly = true)
-    public List<Object[]> comparePlayersPerformance(LocalDate dateDebut) {
-        return performanceRepository.comparePlayersPerformance(dateDebut);
+    public List<Object[]> comparePlayersPerformance() {
+        return performanceRepository.comparePlayersPerformance();
     }
 
     /**
@@ -221,8 +197,6 @@ public class PerformanceService {
         validatePerformanceStats(request);
 
         // Mise à jour des champs
-        performance.setDatePerformance(request.getDatePerformance());
-        performance.setTypePerformance(request.getTypePerformance());
         
         // Statistiques offensives
         performance.setAces(request.getAces());
@@ -230,6 +204,7 @@ public class PerformanceService {
         // Statistiques défensives
         performance.setReceptionsTotales(request.getReceptionsTotales());
         performance.setReceptionsReussies(request.getReceptionsReussies());
+        performance.setBloc(request.getBloc());
         
         // Statistiques de service
         performance.setServicesTotaux(request.getServicesTotaux());
@@ -260,12 +235,10 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public Map<String, Object> getPerformancesStatistics() {
         long totalPerformancesCount = performanceRepository.countTotalPerformances();
-        List<Object[]> repartitionTypes = performanceRepository.countByTypePerformance();
         List<Object[]> topPlayers = performanceRepository.findTopPerformingPlayers();
 
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("totalPerformances", totalPerformancesCount);
-        statistics.put("repartitionParType", repartitionTypes);
         statistics.put("joueursLesPlusPerformants", topPlayers);
         
         return statistics;

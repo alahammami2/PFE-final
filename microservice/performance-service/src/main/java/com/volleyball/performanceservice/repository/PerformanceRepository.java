@@ -2,13 +2,11 @@ package com.volleyball.performanceservice.repository;
 
 import com.volleyball.performanceservice.model.Performance;
 import com.volleyball.performanceservice.model.Player;
-import com.volleyball.performanceservice.model.TypePerformance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -19,27 +17,12 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
 
     // Performances par joueur
     List<Performance> findByPlayer(Player player);
+
+    // Performances par joueur (par ID)
     List<Performance> findByPlayerId(Long playerId);
 
-    // Performances par type
-    List<Performance> findByTypePerformance(TypePerformance typePerformance);
-
-    // Performances par date
-    List<Performance> findByDatePerformance(LocalDate datePerformance);
-
-    // Performances par période
-    @Query("SELECT p FROM Performance p WHERE p.datePerformance >= :dateDebut AND p.datePerformance <= :dateFin")
-    List<Performance> findByPeriode(@Param("dateDebut") LocalDate dateDebut, @Param("dateFin") LocalDate dateFin);
-
-    // Performances par joueur et période
-    @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId AND p.datePerformance >= :dateDebut AND p.datePerformance <= :dateFin")
-    List<Performance> findByPlayerAndPeriode(@Param("playerId") Long playerId, @Param("dateDebut") LocalDate dateDebut, @Param("dateFin") LocalDate dateFin);
-
-    // Performances par joueur et type
-    List<Performance> findByPlayerIdAndTypePerformance(Long playerId, TypePerformance typePerformance);
-
     // Dernières performances d'un joueur
-    @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId ORDER BY p.datePerformance DESC")
+    @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId ORDER BY p.dateCreation DESC")
     List<Performance> findLatestByPlayer(@Param("playerId") Long playerId);
 
     // Meilleures performances (par note)
@@ -58,17 +41,17 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
     @Query("SELECT SUM(p.aces) FROM Performance p WHERE p.player.id = :playerId")
     Object[] getTotalStatsByPlayer(@Param("playerId") Long playerId);
 
-    // Évolution des performances (derniers N matchs)
-    @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId ORDER BY p.datePerformance DESC")
+    // Évolution des performances (dernières N entrées par date de création)
+    @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId ORDER BY p.dateCreation DESC")
     List<Performance> findRecentPerformancesByPlayer(@Param("playerId") Long playerId);
 
-    // Comparaison de performances entre joueurs
-    @Query("SELECT p.player.id, AVG(p.noteGlobale) as moyenneNote FROM Performance p WHERE p.datePerformance >= :dateDebut GROUP BY p.player.id ORDER BY moyenneNote DESC")
-    List<Object[]> comparePlayersPerformance(@Param("dateDebut") LocalDate dateDebut);
+    // Comparaison de performances entre joueurs (moyenne de note globale)
+    @Query("SELECT p.player.id, AVG(p.noteGlobale) as moyenneNote FROM Performance p GROUP BY p.player.id ORDER BY moyenneNote DESC")
+    List<Object[]> comparePlayersPerformance();
 
-    // Performances par type et période
-    @Query("SELECT p FROM Performance p WHERE p.typePerformance = :typePerformance AND p.datePerformance >= :dateDebut AND p.datePerformance <= :dateFin")
-    List<Performance> findByTypeAndPeriode(@Param("typePerformance") TypePerformance typePerformance, @Param("dateDebut") LocalDate dateDebut, @Param("dateFin") LocalDate dateFin);
+    // Moyenne globale de la note sur toutes les performances
+    @Query("SELECT AVG(p.noteGlobale) FROM Performance p WHERE p.noteGlobale IS NOT NULL")
+    Double getAverageGlobalNote();
 
     // Statistiques globales
     @Query("SELECT COUNT(p) FROM Performance p")
@@ -77,11 +60,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
     @Query("SELECT COUNT(p) FROM Performance p WHERE p.player.id = :playerId")
     long countByPlayerId(@Param("playerId") Long playerId);
 
-    @Query("SELECT COUNT(p) FROM Performance p WHERE p.typePerformance = :typePerformance")
-    long countByType(@Param("typePerformance") TypePerformance typePerformance);
-
-    @Query("SELECT p.typePerformance, COUNT(p) FROM Performance p GROUP BY p.typePerformance")
-    List<Object[]> countByTypePerformance();
+    // Répartition par type supprimée (type_performance supprimé)
 
     // Joueurs les plus performants
     @Query("SELECT p.player, AVG(p.noteGlobale) as moyenne FROM Performance p WHERE p.noteGlobale IS NOT NULL GROUP BY p.player ORDER BY moyenne DESC")
@@ -95,6 +74,5 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
     @Query("SELECT p FROM Performance p WHERE p.player.id = :playerId AND p.noteGlobale >= :noteMinimum ORDER BY p.noteGlobale DESC")
     List<Performance> findPlayerPerformancesAboveThreshold(@Param("playerId") Long playerId, @Param("noteMinimum") Double noteMinimum);
 
-    // Vérification d'existence
-    boolean existsByPlayerIdAndDatePerformanceAndTypePerformance(Long playerId, LocalDate datePerformance, TypePerformance typePerformance);
+    // Vérification d'existence spécifique supprimée (colonnes supprimées)
 }

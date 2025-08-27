@@ -24,8 +24,6 @@ public class CreatePlayerRequest {
     @Size(max = 150, message = "L'email ne peut pas dépasser 150 caractères")
     private String email;
 
-    @Size(max = 20, message = "Le téléphone ne peut pas dépasser 20 caractères")
-    private String telephone;
 
     @NotNull(message = "La date de naissance est obligatoire")
     @Past(message = "La date de naissance doit être dans le passé")
@@ -51,7 +49,6 @@ public class CreatePlayerRequest {
 
     private StatutJoueur statut = StatutJoueur.ACTIF;
 
-    private LocalDate dateDebutEquipe;
 
     // Constructeurs
     public CreatePlayerRequest() {
@@ -90,13 +87,6 @@ public class CreatePlayerRequest {
         this.email = email;
     }
 
-    public String getTelephone() {
-        return telephone;
-    }
-
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
-    }
 
     public LocalDate getDateNaissance() {
         return dateNaissance;
@@ -154,13 +144,6 @@ public class CreatePlayerRequest {
         this.statut = statut;
     }
 
-    public LocalDate getDateDebutEquipe() {
-        return dateDebutEquipe;
-    }
-
-    public void setDateDebutEquipe(LocalDate dateDebutEquipe) {
-        this.dateDebutEquipe = dateDebutEquipe;
-    }
 
     @Override
     public String toString() {

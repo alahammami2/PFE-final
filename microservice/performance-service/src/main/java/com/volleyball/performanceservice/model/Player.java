@@ -36,10 +36,6 @@ public class Player {
     @Column(name = "email", unique = true, length = 150)
     private String email;
 
-    @Size(max = 20, message = "Le téléphone ne peut pas dépasser 20 caractères")
-    @Column(name = "telephone", length = 20)
-    private String telephone;
-
     @NotNull(message = "La date de naissance est obligatoire")
     @Column(name = "date_naissance", nullable = false)
     private LocalDate dateNaissance;
@@ -49,7 +45,7 @@ public class Player {
     @Column(name = "position", nullable = false)
     private Position position;
 
-    @Column(name = "numero_maillot", unique = true)
+    @Column(name = "numero_maillot", unique = false)
     private Integer numeroMaillot;
 
     @Column(name = "taille_cm")
@@ -65,12 +61,6 @@ public class Player {
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
     private StatutJoueur statut = StatutJoueur.ACTIF;
-
-    @Column(name = "date_debut_equipe")
-    private LocalDate dateDebutEquipe;
-
-    @Column(name = "actif", nullable = false)
-    private Boolean actif = true;
 
     @Column(name = "date_creation", nullable = false, updatable = false)
     private LocalDateTime dateCreation;
@@ -135,13 +125,6 @@ public class Player {
         this.email = email;
     }
 
-    public String getTelephone() {
-        return telephone;
-    }
-
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
-    }
 
     public LocalDate getDateNaissance() {
         return dateNaissance;
@@ -199,21 +182,6 @@ public class Player {
         this.statut = statut;
     }
 
-    public LocalDate getDateDebutEquipe() {
-        return dateDebutEquipe;
-    }
-
-    public void setDateDebutEquipe(LocalDate dateDebutEquipe) {
-        this.dateDebutEquipe = dateDebutEquipe;
-    }
-
-    public Boolean getActif() {
-        return actif;
-    }
-
-    public void setActif(Boolean actif) {
-        this.actif = actif;
-    }
 
     public LocalDateTime getDateCreation() {
         return dateCreation;
@@ -241,7 +209,6 @@ public class Player {
                 ", position=" + position +
                 ", numeroMaillot=" + numeroMaillot +
                 ", statut=" + statut +
-                ", actif=" + actif +
                 '}';
     }
 }

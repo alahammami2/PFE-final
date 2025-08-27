@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -25,14 +24,7 @@ public class Performance {
     @JsonIgnoreProperties({"absences", "performances", "hibernateLazyInitializer", "handler"})
     private Player player;
 
-    @NotNull(message = "La date est obligatoire")
-    @Column(name = "date_performance", nullable = false)
-    private LocalDate datePerformance;
-
-    @NotNull(message = "Le type de performance est obligatoire")
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type_performance", nullable = false)
-    private TypePerformance typePerformance;
+    // date_performance et type_performance supprimées
 
     // Statistiques offensives (attaques supprimées)
 
@@ -49,6 +41,11 @@ public class Performance {
     @Min(value = 0, message = "Le nombre de réceptions réussies ne peut pas être négatif")
     @Column(name = "receptions_reussies")
     private Integer receptionsReussies = 0;
+
+    // Blocs
+    @Min(value = 0, message = "Le nombre de blocs ne peut pas être négatif")
+    @Column(name = "bloc")
+    private Integer bloc = 0;
 
     // Statistiques de service
     @Min(value = 0, message = "Le nombre de services ne peut pas être négatif")
@@ -89,10 +86,8 @@ public class Performance {
     public Performance() {
     }
 
-    public Performance(Player player, LocalDate datePerformance, TypePerformance typePerformance) {
+    public Performance(Player player) {
         this.player = player;
-        this.datePerformance = datePerformance;
-        this.typePerformance = typePerformance;
     }
 
     // Méthodes de cycle de vie JPA
@@ -140,21 +135,7 @@ public class Performance {
         this.player = player;
     }
 
-    public LocalDate getDatePerformance() {
-        return datePerformance;
-    }
-
-    public void setDatePerformance(LocalDate datePerformance) {
-        this.datePerformance = datePerformance;
-    }
-
-    public TypePerformance getTypePerformance() {
-        return typePerformance;
-    }
-
-    public void setTypePerformance(TypePerformance typePerformance) {
-        this.typePerformance = typePerformance;
-    }
+    // Getters/setters pour date_performance et type_performance supprimés
 
     // Attaques supprimées
 
@@ -182,6 +163,14 @@ public class Performance {
 
     public void setReceptionsReussies(Integer receptionsReussies) {
         this.receptionsReussies = receptionsReussies;
+    }
+
+    public Integer getBloc() {
+        return bloc;
+    }
+
+    public void setBloc(Integer bloc) {
+        this.bloc = bloc;
     }
 
 
@@ -259,8 +248,6 @@ public class Performance {
         return "Performance{" +
                 "id=" + id +
                 ", player=" + (player != null ? player.getNom() + " " + player.getPrenom() : null) +
-                ", datePerformance=" + datePerformance +
-                ", typePerformance=" + typePerformance +
                 
                 ", noteGlobale=" + noteGlobale +
                 '}';

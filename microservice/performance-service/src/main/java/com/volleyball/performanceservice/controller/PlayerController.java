@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/performance/players")
-@CrossOrigin(origins = "*")
 public class PlayerController {
 
     @Autowired
@@ -37,7 +36,7 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.getAllActivePlayers());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<Player> getPlayerById(@PathVariable Long id) {
         return ResponseEntity.ok(playerService.getPlayerById(id));
     }
@@ -57,7 +56,7 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.searchPlayersByName(q));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public ResponseEntity<Player> updatePlayer(@PathVariable Long id, @Valid @RequestBody CreatePlayerRequest request) {
         return ResponseEntity.ok(playerService.updatePlayer(id, request));
     }
@@ -67,10 +66,21 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.changePlayerStatus(id, statut));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         playerService.deletePlayer(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/by-email")
+    public ResponseEntity<Void> deleteByEmail(@RequestParam("email") String email) {
+        playerService.deleteByEmail(email);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/by-email")
+    public ResponseEntity<Player> updateByEmail(@RequestParam("email") String email, @Valid @RequestBody CreatePlayerRequest request) {
+        return ResponseEntity.ok(playerService.updateByEmail(email, request));
     }
 }
 

@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -57,6 +58,9 @@ public class User implements UserDetails {
 
     @Column(name = "date_modification")
     private LocalDateTime dateModification;
+
+    @Column(name = "salaire", precision = 12, scale = 2)
+    private BigDecimal salaire;
 
     // Constructeurs
     public User() {
@@ -191,6 +195,15 @@ public class User implements UserDetails {
 
     public void setDateModification(LocalDateTime dateModification) {
         this.dateModification = dateModification;
+    }
+
+    public BigDecimal getSalaire() {
+        return salaire;
+    }
+
+    public void setSalaire(BigDecimal salaire) {
+        this.salaire = salaire;
+        this.dateModification = LocalDateTime.now();
     }
 
     @PreUpdate

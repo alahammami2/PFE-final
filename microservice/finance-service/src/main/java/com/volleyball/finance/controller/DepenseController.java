@@ -51,13 +51,6 @@ public class DepenseController {
                      .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
-    @GetMapping("/by-id-depense")
-    public ResponseEntity<Depense> getDepenseByIdDepense(@RequestParam Integer idDepense) {
-        Optional<Depense> depense = depenseService.getDepenseByIdDepense(idDepense);
-        return depense.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-    
     @PutMapping("/{id}")
     public ResponseEntity<Depense> updateDepense(@PathVariable Long id, @Valid @RequestBody Depense depenseDetails) {
         try {
@@ -83,26 +76,6 @@ public class DepenseController {
     }
     
     // Business Logic Endpoints
-    @GetMapping("/categorie/{categorieBudgetId}")
-    public ResponseEntity<List<Depense>> getDepensesByCategorie(@PathVariable Long categorieBudgetId) {
-        try {
-            List<Depense> depenses = depenseService.getDepensesByCategorie(categorieBudgetId);
-            return new ResponseEntity<>(depenses, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GetMapping("/categorie/{categorieBudgetId}/ordered")
-    public ResponseEntity<List<Depense>> getDepensesByCategorieOrderByDate(@PathVariable Long categorieBudgetId) {
-        try {
-            List<Depense> depenses = depenseService.getDepensesByCategorieOrderByDate(categorieBudgetId);
-            return new ResponseEntity<>(depenses, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
     @GetMapping("/periode")
     public ResponseEntity<List<Depense>> getDepensesByPeriode(@RequestParam String dateDebut, @RequestParam String dateFin) {
         try {
@@ -165,16 +138,6 @@ public class DepenseController {
         }
     }
     
-    @GetMapping("/categorie/{categorieBudgetId}/total")
-    public ResponseEntity<Double> getTotalMontantByCategorie(@PathVariable Long categorieBudgetId) {
-        try {
-            Double total = depenseService.getTotalMontantByCategorie(categorieBudgetId);
-            return new ResponseEntity<>(total, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
     @GetMapping("/periode/total")
     public ResponseEntity<Double> getTotalMontantByPeriode(@RequestParam String dateDebut, @RequestParam String dateFin) {
         try {
@@ -182,16 +145,6 @@ public class DepenseController {
             LocalDate fin = LocalDate.parse(dateFin);
             Double total = depenseService.getTotalMontantByPeriode(debut, fin);
             return new ResponseEntity<>(total, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GetMapping("/categorie/{categorieBudgetId}/count")
-    public ResponseEntity<Long> countDepensesByCategorie(@PathVariable Long categorieBudgetId) {
-        try {
-            Long count = depenseService.countDepensesByCategorie(categorieBudgetId);
-            return new ResponseEntity<>(count, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -232,3 +185,4 @@ public class DepenseController {
         }
     }
 }
+

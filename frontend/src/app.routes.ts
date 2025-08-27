@@ -8,6 +8,7 @@ import { MedicalCenterPage } from './app/pages/medical-center/medical-center';
 import { FinancePage } from './app/pages/finance/finance';
 import { AbsencePage } from './app/pages/absence/absence';
 import { PerformancePage } from './app/pages/performance/performance';
+import { RoleGuard } from './app/guards/role.guard';
 
 export const appRoutes: Routes = [
     { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
@@ -16,13 +17,13 @@ export const appRoutes: Routes = [
         component: AppLayout,
         children: [
             { path: 'dashboard', component: Dashboard },
-            { path: 'calendrier', component: CalendarPage },
-            { path: 'demandes-administratives', component: DemandesAdministratives },
-            { path: 'effectif', component: EffectifPage },
-            { path: 'centre-medical', component: MedicalCenterPage },
-            { path: 'finance', component: FinancePage },
-            { path: 'absence', component: AbsencePage },
-            { path: 'performance', component: PerformancePage },
+            { path: 'calendrier', component: CalendarPage, canActivate: [RoleGuard], data: { roles: ['JOUEUR', 'COACH', 'ADMIN', 'INVITE', 'STAF_MEDICAL'] } },
+            { path: 'demandes-administratives', component: DemandesAdministratives, canActivate: [RoleGuard], data: { roles: ['COACH', 'ADMIN', 'JOUEUR', 'STAF_MEDICAL'] } },
+            { path: 'effectif', component: EffectifPage, canActivate: [RoleGuard], data: { roles: ['COACH', 'ADMIN', 'INVITE'] } },
+            { path: 'centre-medical', component: MedicalCenterPage, canActivate: [RoleGuard], data: { roles: ['COACH', 'ADMIN', 'JOUEUR', 'STAF_MEDICAL'] } },
+            { path: 'finance', component: FinancePage, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'RESPONSABLE_FINANCIER'] } },
+            { path: 'absence', component: AbsencePage, canActivate: [RoleGuard], data: { roles: ['COACH', 'ADMIN', 'INVITE', 'RESPONSABLE_FINANCIER', 'JOUEUR'] } },
+            { path: 'performance', component: PerformancePage, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'JOUEUR', 'COACH', 'INVITE'] } },
             { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }
         ]
     },

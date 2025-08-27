@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -32,7 +34,7 @@ public class PerformanceFile {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @NotBlank(message = "Le chemin du fichier est obligatoire")
+    @NotNull(message = "Le chemin du fichier ne peut pas être null")
     @Size(max = 500, message = "Le chemin du fichier ne peut pas dépasser 500 caractères")
     @Column(name = "file_path", nullable = false)
     private String filePath;
@@ -40,10 +42,18 @@ public class PerformanceFile {
     @Column(name = "upload_date", nullable = false, updatable = false)
     private LocalDateTime uploadDate;
 
-    // Relation avec Performance (optionnelle)
+    // Association optionnelle à une performance
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performance_id")
     private Performance performance;
+
+    // Contenu binaire du fichier (stocké en base)
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "content", columnDefinition = "bytea")
+    private byte[] content;
+
 
     // Constructeurs
     public PerformanceFile() {
@@ -121,7 +131,15 @@ public class PerformanceFile {
     public void setPerformance(Performance performance) {
         this.performance = performance;
     }
+    
+    public byte[] getContent() {
+        return content;
+    }
 
+    public void setContent(byte[] content) {
+        this.content = content;
+    }
+    
     @Override
     public String toString() {
         return "PerformanceFile{" +

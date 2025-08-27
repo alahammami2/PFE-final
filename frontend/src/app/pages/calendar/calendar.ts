@@ -8,10 +8,15 @@ import { DialogModule } from 'primeng/dialog';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { AttendanceService } from '../../services/attendance.service';
+import { AbsenceApiService, CreateAbsenceRequestDto } from '../../services/absence.service';
+import { AuthService } from '../../services/auth.service';
+import { HasAnyRoleDirective } from '@/directives/has-any-role.directive';
+import { PlanningApiService, PlanningEventType, CreateEventRequest, UpdateEventRequest } from '../../services/planning.service';
 
 type EventType = 'Entraînement' | 'Match amical' | 'Match entre nous' | 'visionnage' | 'Réunion' | 'Championnats' | 'Match coupe'  ;
 
 interface CalendarEvent {
+    id?: number; // backend id
     date: string; // YYYY-MM-DD
     title: string;
     type: EventType;
@@ -25,7 +30,7 @@ interface CalendarEvent {
 @Component({
     selector: 'app-calendrier',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, CheckboxModule, SelectModule, DialogModule, InputTextModule, DatePickerModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, CheckboxModule, SelectModule, DialogModule, InputTextModule, DatePickerModule, HasAnyRoleDirective],
     template: `
         <div class="grid grid-cols-12 gap-6">
             <!-- Left Filters -->
@@ -57,7 +62,7 @@ interface CalendarEvent {
             <div class="col-span-12 md:col-span-8 lg:col-span-9 xl:col-span-9">
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div class="flex items-center gap-2">
-                        <p-button label="Créer un événement" icon="pi pi-plus" severity="success" (onClick)="createNewEvent()"></p-button>
+                        <p-button label="Créer un événement" icon="pi pi-plus" severity="success" (onClick)="createNewEvent()" *hasAnyRole="['COACH','ADMIN']"></p-button>
                         <p-button icon="pi pi-print" [text]="true" (onClick)="print()"></p-button>
                     </div>
                     <!-- Success message -->
@@ -125,7 +130,7 @@ interface CalendarEvent {
         <!-- Event Dialog -->
         <p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '720px', height: '700px' }" [draggable]="false" [resizable]="false" [contentStyle]="{ overflow: 'visible' }" (onHide)="isEditMode=false">
             <ng-template pTemplate="header">
-                <div class="text-2xl font-semibold">Bonjour ALA,</div>
+                <div class="text-2xl font-semibold">Bonjour {{ lastName || '—' }},</div>
             </ng-template>
             <div *ngIf="selectedEvent as ev" class="flex flex-col gap-4">
                 <div>
@@ -134,7 +139,7 @@ interface CalendarEvent {
                     <div class="text-base" *ngIf="ev.time">Le rendez-vous est prévu à {{ ev.time }}.</div>
                 </div>
 
-                <div class="flex justify-center gap-3 mt-4">
+                <div class="flex justify-center gap-3 mt-4" *hasAnyRole="['JOUEUR','COACH','STAF_MEDICAL']">
                     <p-button label="Présent(e)" severity="success" styleClass="px-5 py-3 text-base" [outlined]="availability!=='present'" (onClick)="setAvailability('present')"></p-button>
                     <p-button label="Absent(e)" severity="danger" styleClass="px-5 py-3 text-base" [outlined]="availability!=='absent'" (onClick)="setAvailability('absent')"></p-button>
                 </div>
@@ -143,7 +148,7 @@ interface CalendarEvent {
                     <div class="font-medium text-lg mb-3">Récapitulatif :</div>
                     <div class="text-base mb-2"><span class="text-muted-color">Quoi  :   </span> <span class="font-medium"> {{ ev.title }}</span></div>
                     <div class="text-base mb-2"><span class="text-muted-color">Quand  :   </span> <span class="font-medium">{{ formatDate(ev.date) }}<span *ngIf="ev.time"> à {{ ev.time }}</span></span></div>
-                    <div class="text-base mb-2"><span class="text-muted-color">Lieu  :   </span> <span class="font-medium">salle issa ben nasr</span></div>
+                    <div class="text-base mb-2"><span class="text-muted-color">Lieu  :   </span> <span class="font-medium">{{ ev.lieu || '—' }}</span></div>
                     <div class="text-base" *ngIf="ev.team"><span class="text-muted-color">Équipe :</span> <span class="font-medium">{{ ev.team }}</span></div>
                 </div>
 
@@ -179,14 +184,16 @@ interface CalendarEvent {
 
             <ng-template pTemplate="footer">
                 <div class="flex items-center justify-center w-full gap-3 flex-wrap">
-                    <div class="flex gap-2">
+                    <div class="flex gap-2" *hasAnyRole="['COACH','ADMIN']">
                         <p-button label="Modifier" icon="pi pi-pencil" (onClick)="startEdit()"></p-button>
                         <p-button label="Supprimer" icon="pi pi-trash" severity="danger" (onClick)="deleteSelected()"></p-button>
                     </div>
-                    <div class="flex gap-2" *ngIf="isEditMode">
-                        <p-button label="Annuler" text (onClick)="isEditMode=false"></p-button>
-                        <p-button label="Enregistrer" icon="pi pi-check" (onClick)="saveSelected()"></p-button>
-                    </div>
+                    <ng-container *hasAnyRole="['COACH','ADMIN']">
+                        <div class="flex gap-2" *ngIf="isEditMode">
+                            <p-button label="Annuler" text (onClick)="isEditMode=false"></p-button>
+                            <p-button label="Enregistrer" icon="pi pi-check" (onClick)="saveSelected()"></p-button>
+                        </div>
+                    </ng-container>
                 </div>
             </ng-template>
         </p-dialog>
@@ -231,7 +238,7 @@ interface CalendarEvent {
             <ng-template pTemplate="footer">
                 <div class="flex gap-2 justify-end">
                     <p-button label="Annuler" severity="secondary" (onClick)="createEventDialogVisible=false"></p-button>
-                    <p-button label="Créer" icon="pi pi-check" [disabled]="!newEvent.type" (onClick)="submitNewEvent()"></p-button>
+                    <p-button label="Créer" icon="pi pi-check" [disabled]="!newEvent.type" (onClick)="submitNewEvent()" *hasAnyRole="['COACH','ADMIN']"></p-button>
                 </div>
             </ng-template>
         </p-dialog>
@@ -298,24 +305,86 @@ export class CalendarPage {
         'Séniors Fille': true
     };
 
-    events: CalendarEvent[] = [
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 1), title: 'Match amical', type: 'Match amical', team: 'Séniors Homme' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 1), title: 'Match de coupe', type: 'Match coupe', team: 'Séniors Fille' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 6), title: 'Entraînement', type: 'Entraînement', team: 'Séniors Homme' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 7), title: 'Entraînement', type: 'Entraînement', team: 'Séniors Fille' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 14), title: 'Match amical', type: 'Match amical', team: 'Séniors Homme' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 21), title: 'Entraînement', type: 'Entraînement', team: 'Séniors Fille' },
-        { date: this.iso(this.cursorDate.getFullYear(), this.cursorDate.getMonth(), 28), title: 'Championnats', type: 'Championnats', team: 'Séniors Homme' }
-    ];
+    // Chargés depuis le backend via fetchEventsFromBackend()
+    events: CalendarEvent[] = [];
 
 
 
-    constructor(private attendance: AttendanceService, private fb: FormBuilder) {
+    constructor(private attendance: AttendanceService,
+                private fb: FormBuilder,
+                private planningApi: PlanningApiService,
+                private absenceApi: AbsenceApiService,
+                private authService: AuthService) {
         this.buildMonth();
         this.buildWeek();
         this.absenceForm = this.fb.group({
             type: ['Personnel', Validators.required],
             justification: ['']
+        });
+        // Charger les événements depuis le backend
+        this.fetchEventsFromBackend();
+        
+        // Suivre uniquement le nom de famille (nom)
+        const u = this.authService.getCurrentUser();
+        this.lastName = u ? (u.nom || (u.email?.split('@')[0] || '')) : '';
+        this.authService.currentUser$.subscribe((usr) => {
+            this.lastName = usr ? (usr.nom || (usr.email?.split('@')[0] || '')) : '';
+        });
+    }
+
+    // Map backend enum -> UI label
+    private mapBackendTypeToUi(t: PlanningEventType): EventType {
+        switch (t) {
+            case 'ENTRAINEMENT': return 'Entraînement';
+            case 'MATCH_AMICAL': return 'Match amical';
+            case 'REUNION': return 'Réunion';
+            case 'CHAMPIONNAT': return 'Championnats';
+            case 'COUPE': return 'Match coupe';
+            case 'VISONNAGE': return 'visionnage';
+            case 'AUTRE':
+            default: return 'visionnage';
+        }
+    }
+
+    // Map UI label -> backend enum
+    private mapUiTypeToBackend(t: EventType): PlanningEventType {
+        switch (t) {
+            case 'Entraînement': return 'ENTRAINEMENT';
+            case 'Match amical': return 'MATCH_AMICAL';
+            case 'Réunion': return 'REUNION';
+            case 'Championnats': return 'CHAMPIONNAT';
+            case 'Match coupe': return 'COUPE';
+            case 'Match entre nous': return 'AUTRE';
+            case 'visionnage': return 'VISONNAGE';
+            default: return 'AUTRE';
+        }
+    }
+
+    private fetchEventsFromBackend() {
+        this.planningApi.getAll().subscribe({
+            next: (items) => {
+                // Convertir EventResponse -> CalendarEvent
+                this.events = (items || []).map((e) => {
+                    const startStr = (e.dateDebut || '').toString();
+                    const datePart = startStr.length >= 10 ? startStr.slice(0, 10) : '';
+                    const timePart = startStr.length >= 16 ? startStr.slice(11, 16) : '09:00';
+                    return {
+                        id: e.id,
+                        date: datePart,
+                        title: (e.titre || this.mapBackendTypeToUi(e.type)) + (e.lieu ? ` — ${e.lieu}` : ''),
+                        type: this.mapBackendTypeToUi(e.type),
+                        time: timePart,
+                        lieu: e.lieu,
+                        dateDebut: e.dateDebut,
+                        dateFin: e.dateFin,
+                    } as CalendarEvent;
+                });
+                this.buildMonth();
+                this.buildWeek();
+            },
+            error: (err) => {
+                console.error('Erreur de chargement des événements:', err);
+            }
         });
     }
 
@@ -485,9 +554,42 @@ export class CalendarPage {
         { label: 'Maladie', value: 'Maladie' },
         { label: 'Blessure', value: 'Blessure' },
         { label: 'Personnel', value: 'Personnel' },
-        { label: 'éducation', value: 'éducation' },
+        { label: 'Professionnel', value: 'Professionnel' },
+        { label: 'Vacances', value: 'Vacances' },
         { label: 'Autre', value: 'Autre' }
     ];
+    
+    // Nom de famille pour l'en-tête du dialogue
+    lastName: string = '';
+
+    private mapUiAbsenceTypeToBackend(label: string): CreateAbsenceRequestDto['typeAbsence'] {
+        // Normalize accents and case to make mapping resilient to inputs like "éducation".
+        const normalized = (label || '')
+            .toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+            .toUpperCase()
+            .trim();
+
+        switch (normalized) {
+            case 'MALADIE':
+                return 'MALADIE';
+            case 'BLESSURE':
+                return 'BLESSURE';
+            case 'PERSONNEL':
+                return 'PERSONNEL';
+            case 'PROFESSIONNEL':
+            case 'PRO':
+            case 'EDUCATION': // map "éducation" -> EDUCATION -> PROFESSIONNEL
+            case 'EDUCATIONNEL':
+            case 'SCOLAIRE':
+                return 'PROFESSIONNEL';
+            case 'VACANCES':
+                return 'VACANCES';
+            default:
+                return 'AUTRE';
+        }
+    }
 
     openEvent(ev: CalendarEvent) {
         this.selectedIndex = this.events.indexOf(ev);
@@ -518,16 +620,37 @@ export class CalendarPage {
 
     submitAbsence() {
         if (!this.selectedEvent || this.absenceForm.invalid) return;
-        const d = this.selectedEvent.date;
-        const dd = d.slice(8, 10);
-        const mm = d.slice(5, 7);
-        const yyyy = d.slice(0, 4);
-        const ddmmyyyy = `${dd}-${mm}-${yyyy}`;
-        const membre = 'Joueur Exemple';
-        const role = 'Joueur';
+        const current = this.authService.getCurrentUser();
+        const email = current?.email;
+        if (!email) {
+            console.error('Utilisateur non authentifié ou email manquant.');
+            return;
+        }
+        // selectedEvent.date is in YYYY-MM-DD
+        const isoDate = this.selectedEvent.date;
         const v = this.absenceForm.value as any;
-        this.attendance.addAbsence({ membre, role, dateDebut: ddmmyyyy, dateFin: ddmmyyyy, type: v.type, justification: v.justification, statut: 'En attente' });
-        this.absenceDialogVisible = false;
+        const payload: CreateAbsenceRequestDto = {
+            playerId: null,
+            email: email,
+            dateDebut: isoDate,
+            dateFin: isoDate,
+            typeAbsence: this.mapUiAbsenceTypeToBackend(v.type),
+            raison: v.justification || null,
+            justifiee: !!v.justification,
+            commentaires: v.justification || null,
+        };
+        this.absenceApi.create(payload).subscribe({
+            next: () => {
+                this.absenceDialogVisible = false;
+                this.dialogVisible = false;
+                this.showSuccessMessage = true;
+                this.successMessage = 'Absence enregistrée avec succès';
+                setTimeout(() => (this.showSuccessMessage = false), 2000);
+            },
+            error: (err) => {
+                console.error('Erreur lors de la création de l\'absence:', err);
+            }
+        });
     }
 
     startEdit() {
@@ -561,18 +684,71 @@ export class CalendarPage {
 
     saveSelected() {
         if (this.selectedIndex == null || !this.editedEvent) return;
-        this.events[this.selectedIndex] = { ...this.editedEvent };
-        this.selectedEvent = this.events[this.selectedIndex];
-        this.isEditMode = false;
+        const ev = this.editedEvent;
+        const id = ev.id;
+        // Construire payload backend
+        const startIso = this.combineDateTimeToIso(ev.date, ev.time || '09:00');
+        const endIso = this.combineDateTimeToIso(ev.date, this.addMinutesToTime(ev.time || '09:00', 60));
+        const payload: UpdateEventRequest = {
+            titre: ev.title || this.mapUiTypeToBackend(ev.type),
+            description: '',
+            dateDebut: startIso,
+            dateFin: endIso,
+            type: this.mapUiTypeToBackend(ev.type),
+            lieu: ev.lieu || '',
+        };
+        if (id) {
+            this.planningApi.update(id, payload).subscribe({
+                next: (res) => {
+                    // Mettre à jour localement depuis la réponse
+                    const updated = this.eventResponseToCalendar(res);
+                    this.events[this.selectedIndex!] = updated;
+                    this.selectedEvent = updated;
+                    this.isEditMode = false;
+                },
+                error: (err) => {
+                    console.error('Erreur lors de la mise à jour:', err);
+                },
+            });
+        } else {
+            // Si pas d'id (événement local), faire un create
+            const createPayload: CreateEventRequest = { ...payload };
+            this.planningApi.create(createPayload).subscribe({
+                next: (res) => {
+                    const created = this.eventResponseToCalendar(res);
+                    this.events[this.selectedIndex!] = created;
+                    this.selectedEvent = created;
+                    this.isEditMode = false;
+                },
+                error: (err) => console.error('Erreur lors de la création:', err),
+            });
+        }
     }
 
     deleteSelected() {
         if (this.selectedIndex == null) return;
-        this.events.splice(this.selectedIndex, 1);
-        this.dialogVisible = false;
-        this.selectedEvent = null;
-        this.selectedIndex = null;
-        this.isEditMode = false;
+        const ev = this.events[this.selectedIndex];
+        if (ev && ev.id) {
+            this.planningApi.delete(ev.id).subscribe({
+                next: () => {
+                    this.events.splice(this.selectedIndex!, 1);
+                    this.dialogVisible = false;
+                    this.selectedEvent = null;
+                    this.selectedIndex = null;
+                    this.isEditMode = false;
+                    // Re-sync with backend to ensure consistency
+                    this.fetchEventsFromBackend();
+                },
+                error: (err) => console.error('Erreur lors de la suppression:', err),
+            });
+        } else {
+            // Supprimer localement si pas encore persisté
+            this.events.splice(this.selectedIndex, 1);
+            this.dialogVisible = false;
+            this.selectedEvent = null;
+            this.selectedIndex = null;
+            this.isEditMode = false;
+        }
     }
 
     formatDate(iso: string): string {
@@ -653,57 +829,44 @@ export class CalendarPage {
 
     submitNewEvent() {
         if (!this.newEvent.type || !this.newEventDate) return; // Type et date sont obligatoires
-        
-        // Mettre à jour l'événement avec les valeurs du formulaire
-        this.newEvent.date = this.newEventDate;
-        this.newEvent.time = this.dateToTime(this.newEventTimeDebut);
-        
-        // Si pas de titre, utiliser le type comme titre
-        if (!this.newEvent.title) {
-            this.newEvent.title = this.newEvent.type;
-        }
-        
-        // Ajouter l'événement à la liste
-        this.events.push({ ...this.newEvent });
-        
-        // Fermer le dialogue et réinitialiser le formulaire
-        this.createEventDialogVisible = false;
-        this.newEvent = {
-            date: '',
-            title: '',
-            type: 'Entraînement',
-            team: undefined,
-            time: undefined,
-            lieu: undefined,
-            dateDebut: undefined,
-            dateFin: undefined
+
+        // Construire payload pour backend
+        const startIso = this.combineDateTimeToIso(this.newEventDate, this.dateToTime(this.newEventTimeDebut) || '09:00');
+        const endIso = this.combineDateTimeToIso(this.newEventDate, this.dateToTime(this.newEventTimeFin) || this.addMinutesToTime(this.dateToTime(this.newEventTimeDebut) || '09:00', 60));
+        const payload: CreateEventRequest = {
+            titre: this.newEvent.title && this.newEvent.title.trim().length > 0 ? this.newEvent.title : this.newEvent.type,
+            description: '',
+            dateDebut: startIso,
+            dateFin: endIso,
+            type: this.mapUiTypeToBackend(this.newEvent.type),
+            lieu: this.newEvent.lieu || '',
         };
-        
-        // Réinitialiser les sélecteurs
-        this.newEventDate = '';
-        this.newEventTimeDebut = null;
-        this.newEventTimeFin = null;
-        
-        // Actualiser les vues du calendrier
-        this.buildMonth();
-        this.buildWeek();
-        
-        // Afficher le message de succès
-        this.successMessage = `Événement "${this.newEvent.type}" créé avec succès !`;
-        this.showSuccessMessage = true;
-        
-        // Masquer le message après 3 secondes
-        setTimeout(() => {
-            this.showSuccessMessage = false;
-        }, 3000);
-        
-        console.log('Nouvel événement créé et ajouté au calendrier:', this.newEvent);
-        console.log('Total des événements dans le calendrier:', this.events.length);
+
+        this.planningApi.create(payload).subscribe({
+            next: (res) => {
+                // Ajouter la version retournée par le backend
+                const created = this.eventResponseToCalendar(res);
+                this.events.push(created);
+                this.createEventDialogVisible = false;
+
+                // Reset form
+                this.newEvent = { date: '', title: '', type: 'Entraînement' } as CalendarEvent;
+                this.newEventDate = '';
+                this.newEventTimeDebut = null;
+                this.newEventTimeFin = null;
+
+                this.buildMonth();
+                this.buildWeek();
+
+                this.successMessage = `Événement "${created.title}" créé avec succès !`;
+                this.showSuccessMessage = true;
+                setTimeout(() => (this.showSuccessMessage = false), 3000);
+            },
+            error: (err) => {
+                console.error('Erreur création événement:', err);
+            },
+        });
     }
-
-
-
-
 
     // Helper method to format date for database (timestamp format)
     formatDateTimeForDatabase(date: Date): string {
@@ -713,8 +876,8 @@ export class CalendarPage {
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         const seconds = String(date.getSeconds()).padStart(2, '0');
-        
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        // Prefer ISO LocalDateTime with 'T' for backend
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
 
     dateToTime(d?: Date | null): string | undefined {
@@ -722,6 +885,38 @@ export class CalendarPage {
         const hh = String(d.getHours()).padStart(2, '0');
         const mm = String(d.getMinutes()).padStart(2, '0');
         return `${hh}:${mm}`;
+    }
+
+    private combineDateTimeToIso(date: string, time: string): string {
+        // date: YYYY-MM-DD, time: HH:mm
+        const seconds = '00';
+        return `${date}T${time}:${seconds}`;
+    }
+
+    private addMinutesToTime(time: string, minutesToAdd: number): string {
+        const [hh, mm] = time.split(':').map((x) => parseInt(x, 10));
+        const base = new Date();
+        base.setHours(hh || 0, mm || 0, 0, 0);
+        base.setMinutes(base.getMinutes() + minutesToAdd);
+        const nh = String(base.getHours()).padStart(2, '0');
+        const nm = String(base.getMinutes()).padStart(2, '0');
+        return `${nh}:${nm}`;
+    }
+
+    private eventResponseToCalendar(e: { id: number; titre: string; dateDebut: string; dateFin: string; type: PlanningEventType; lieu?: string; }): CalendarEvent {
+        const startStr = (e.dateDebut || '').toString();
+        const datePart = startStr.length >= 10 ? startStr.slice(0, 10) : '';
+        const timePart = startStr.length >= 16 ? startStr.slice(11, 16) : '09:00';
+        return {
+            id: e.id,
+            date: datePart,
+            title: e.titre || this.mapBackendTypeToUi(e.type),
+            type: this.mapBackendTypeToUi(e.type),
+            time: timePart,
+            lieu: e.lieu,
+            dateDebut: e.dateDebut,
+            dateFin: e.dateFin,
+        } as CalendarEvent;
     }
 }
 

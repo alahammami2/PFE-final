@@ -3,6 +3,7 @@ package com.volleyball.authservice.dto;
 import com.volleyball.authservice.model.Role;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public class UserResponse {
 
@@ -14,11 +15,12 @@ public class UserResponse {
     private Boolean actif;
     private LocalDateTime dateCreation;
     private String telephone;
+    private BigDecimal salaire;
 
     // Constructeurs
     public UserResponse() {}
 
-    public UserResponse(Long id, String nom, String prenom, String email, Role role, Boolean actif, LocalDateTime dateCreation, String telephone) {
+    public UserResponse(Long id, String nom, String prenom, String email, Role role, Boolean actif, LocalDateTime dateCreation, String telephone, BigDecimal salaire) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -27,6 +29,7 @@ public class UserResponse {
         this.actif = actif;
         this.dateCreation = dateCreation;
         this.telephone = telephone;
+        this.salaire = salaire;
     }
 
     // Getters et Setters
@@ -92,5 +95,13 @@ public class UserResponse {
 
     public void setTelephone(String telephone) {
         this.telephone = telephone;
+    }
+
+    public BigDecimal getSalaire() {
+        return salaire;
+    }
+
+    public void setSalaire(BigDecimal salaire) {
+        this.salaire = salaire;
     }
 }

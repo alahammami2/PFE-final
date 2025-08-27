@@ -28,7 +28,6 @@ public class Event {
     @Column(name = "date_fin", nullable = false)
     private LocalDateTime dateFin;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private EventType type;
 

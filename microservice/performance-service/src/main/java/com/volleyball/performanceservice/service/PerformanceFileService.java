@@ -9,10 +9,10 @@ import com.volleyball.performanceservice.repository.PerformanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
@@ -55,6 +55,54 @@ public class PerformanceFileService {
     }
 
     /**
+     * Upload d'un fichier binaire et stockage dans la base (colonne content)
+     */
+    public PerformanceFileResponse uploadAndStoreFile(MultipartFile multipart, Long performanceId) {
+        try {
+            if (multipart == null || multipart.isEmpty()) {
+                throw new RuntimeException("Aucun fichier fourni");
+            }
+
+            String originalName = multipart.getOriginalFilename() != null ? multipart.getOriginalFilename() : "fichier";
+            String ext = "";
+            int idx = originalName.lastIndexOf('.')
+                    ;
+            if (idx >= 0 && idx < originalName.length() - 1) {
+                ext = originalName.substring(idx + 1).toLowerCase();
+            }
+
+            CreatePerformanceFileRequest req = new CreatePerformanceFileRequest();
+            req.setOriginalName(originalName);
+            req.setFileType(ext);
+            req.setFileSize(multipart.getSize());
+            // Pas de chemin fichier réel, on stocke en DB
+            req.setFilePath("");
+            req.setPerformanceId(performanceId);
+
+            // Valider les métadonnées (type/size)
+            validateFileRequest(req);
+
+            PerformanceFile entity = new PerformanceFile();
+            entity.setOriginalName(req.getOriginalName());
+            entity.setFileType(req.getFileType());
+            entity.setFileSize(req.getFileSize());
+            entity.setFilePath(req.getFilePath());
+            entity.setContent(multipart.getBytes());
+
+            if (performanceId != null) {
+                Performance performance = performanceRepository.findById(performanceId)
+                        .orElseThrow(() -> new RuntimeException("Performance non trouvée avec l'ID: " + performanceId));
+                entity.setPerformance(performance);
+            }
+
+            PerformanceFile saved = performanceFileRepository.save(entity);
+            return convertToResponse(saved);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'upload du fichier: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Valider la requête de création de fichier
      */
     private void validateFileRequest(CreatePerformanceFileRequest request) {
@@ -86,8 +134,9 @@ public class PerformanceFileService {
      */
     @Transactional(readOnly = true)
     public List<PerformanceFileResponse> getAllPerformanceFiles() {
+        // Version LITE: pas d'accès aux relations pour éviter toute erreur côté DB/mapping
         return performanceFileRepository.findAll().stream()
-                .map(this::convertToResponse)
+                .map(this::convertToLiteResponse)
                 .collect(Collectors.toList());
     }
 
@@ -99,6 +148,12 @@ public class PerformanceFileService {
         PerformanceFile file = performanceFileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fichier non trouvé avec l'ID: " + id));
         return convertToResponse(file);
+    }
+
+    @Transactional(readOnly = true)
+    public PerformanceFile getEntity(Long id) {
+        return performanceFileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Fichier non trouvé avec l'ID: " + id));
     }
 
     /**
@@ -227,6 +282,14 @@ public class PerformanceFileService {
     }
 
     /**
+     * Compter tous les fichiers de performance
+     */
+    @Transactional(readOnly = true)
+    public long countAllFiles() {
+        return performanceFileRepository.count();
+    }
+
+    /**
      * Convertir une entité en DTO de réponse
      */
     private PerformanceFileResponse convertToResponse(PerformanceFile file) {
@@ -239,12 +302,39 @@ public class PerformanceFileService {
         response.setUploadDate(file.getUploadDate());
         
         if (file.getPerformance() != null) {
-            response.setPerformanceId(file.getPerformance().getId());
-            response.setPerformanceInfo(file.getPerformance().getPlayer().getNom() + " " + 
-                                    file.getPerformance().getPlayer().getPrenom() + " - " + 
-                                    file.getPerformance().getDatePerformance());
+            var perf = file.getPerformance();
+            response.setPerformanceId(perf.getId());
+            String info;
+            if (perf.getPlayer() != null) {
+                String nom = perf.getPlayer().getNom() != null ? perf.getPlayer().getNom() : "";
+                String prenom = perf.getPlayer().getPrenom() != null ? perf.getPlayer().getPrenom() : "";
+                info = (nom + " " + prenom).trim();
+            } else {
+                info = "Performance " + perf.getId();
+            }
+            if (perf.getDateCreation() != null) {
+                info = info + " - " + perf.getDateCreation();
+            }
+            response.setPerformanceInfo(info);
         }
         
+        return response;
+    }
+
+    /**
+     * Convertir une entité en DTO LITE (sans accès aux relations)
+     */
+    private PerformanceFileResponse convertToLiteResponse(PerformanceFile file) {
+        PerformanceFileResponse response = new PerformanceFileResponse();
+        response.setId(file.getId());
+        response.setOriginalName(file.getOriginalName());
+        response.setFileType(file.getFileType());
+        response.setFileSize(file.getFileSize());
+        response.setFilePath(file.getFilePath());
+        response.setUploadDate(file.getUploadDate());
+        if (file.getPerformance() != null) {
+            response.setPerformanceId(file.getPerformance().getId());
+        }
         return response;
     }
 }

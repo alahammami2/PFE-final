@@ -2,10 +2,11 @@ package com.volleyball.planningservice.model;
 
 public enum EventType {
     ENTRAINEMENT("Entraînement"),
-    MATCH("Match"),
+    MATCH_AMICAL("Match amical"),
+    CHAMPIONNAT("Championnat"),
+    COUPE("Coupe"),
     REUNION("Réunion"),
-    COMPETITION("Compétition"),
-    EVENEMENT("Événement"),
+    VISONNAGE("Visonnage"),
     AUTRE("Autre");
 
     private final String displayName;

@@ -1,9 +1,7 @@
 package com.volleyball.performanceservice.dto;
 
-import com.volleyball.performanceservice.model.TypePerformance;
 import jakarta.validation.constraints.*;
 
-import java.time.LocalDate;
 
 /**
  * DTO pour la création d'une performance
@@ -13,11 +11,7 @@ public class CreatePerformanceRequest {
     @NotNull(message = "L'ID du joueur est obligatoire")
     private Long playerId;
 
-    @NotNull(message = "La date de performance est obligatoire")
-    private LocalDate datePerformance;
-
-    @NotNull(message = "Le type de performance est obligatoire")
-    private TypePerformance typePerformance;
+    // datePerformance et typePerformance supprimées
 
     // Statistiques offensives (attaques supprimées)
 
@@ -32,6 +26,9 @@ public class CreatePerformanceRequest {
     @Min(value = 0, message = "Le nombre de réceptions réussies ne peut pas être négatif")
     private Integer receptionsReussies = 0;
 
+    // Blocs
+    @Min(value = 0, message = "Le nombre de blocs ne peut pas être négatif")
+    private Integer bloc = 0;
 
 
     // Statistiques de service
@@ -64,10 +61,8 @@ public class CreatePerformanceRequest {
     public CreatePerformanceRequest() {
     }
 
-    public CreatePerformanceRequest(Long playerId, LocalDate datePerformance, TypePerformance typePerformance) {
+    public CreatePerformanceRequest(Long playerId) {
         this.playerId = playerId;
-        this.datePerformance = datePerformance;
-        this.typePerformance = typePerformance;
     }
 
     // Getters et Setters
@@ -79,21 +74,7 @@ public class CreatePerformanceRequest {
         this.playerId = playerId;
     }
 
-    public LocalDate getDatePerformance() {
-        return datePerformance;
-    }
-
-    public void setDatePerformance(LocalDate datePerformance) {
-        this.datePerformance = datePerformance;
-    }
-
-    public TypePerformance getTypePerformance() {
-        return typePerformance;
-    }
-
-    public void setTypePerformance(TypePerformance typePerformance) {
-        this.typePerformance = typePerformance;
-    }
+    // Getters/setters supprimés pour datePerformance/typePerformance
 
     // Attaques supprimées
 
@@ -121,6 +102,14 @@ public class CreatePerformanceRequest {
 
     public void setReceptionsReussies(Integer receptionsReussies) {
         this.receptionsReussies = receptionsReussies;
+    }
+
+    public Integer getBloc() {
+        return bloc;
+    }
+
+    public void setBloc(Integer bloc) {
+        this.bloc = bloc;
     }
 
 
@@ -181,9 +170,9 @@ public class CreatePerformanceRequest {
     public String toString() {
         return "CreatePerformanceRequest{" +
                 "playerId=" + playerId +
-                ", datePerformance=" + datePerformance +
-                ", typePerformance=" + typePerformance +
                 
+                
+                ", bloc=" + bloc +
                 ", noteGlobale=" + noteGlobale +
                 '}';
     }

@@ -12,8 +12,10 @@ import java.time.LocalDate;
  */
 public class CreateAbsenceRequest {
 
-    @NotNull(message = "L'ID du joueur est obligatoire")
     private Long playerId;
+
+    // Optionnel: si playerId n'est pas fourni, on peut résoudre par email
+    private String email;
 
     @NotNull(message = "La date de début est obligatoire")
     private LocalDate dateDebut;
@@ -49,6 +51,14 @@ public class CreateAbsenceRequest {
 
     public void setPlayerId(Long playerId) {
         this.playerId = playerId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public LocalDate getDateDebut() {
@@ -103,6 +113,7 @@ public class CreateAbsenceRequest {
     public String toString() {
         return "CreateAbsenceRequest{" +
                 "playerId=" + playerId +
+                ", email='" + email + '\'' +
                 ", dateDebut=" + dateDebut +
                 ", dateFin=" + dateFin +
                 ", typeAbsence=" + typeAbsence +

@@ -1,13 +1,11 @@
 spring:
   application:
     name: finance-service
-  
   datasource:
     url: jdbc:postgresql://localhost:5432/finance_db
     username: finance_user
     password: root
     driver-class-name: org.postgresql.Driver
-    
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,11 +15,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     defer-datasource-initialization: true
-    
   sql:
     init:
-      mode: always
-      data-locations: classpath:data.sql
+      mode: never
 
 management:
   endpoints:

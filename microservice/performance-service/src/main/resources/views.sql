@@ -3,8 +3,12 @@
 -- Ce script est exécuté après la création des tables par Hibernate
 -- =================================================================
 
+-- Supprimer les vues existantes pour éviter les erreurs de modification de colonnes
+DROP VIEW IF EXISTS v_player_average_stats CASCADE;
+DROP VIEW IF EXISTS v_current_absences CASCADE;
+
 -- Vue des statistiques moyennes par joueur
-CREATE OR REPLACE VIEW v_player_average_stats AS
+CREATE VIEW v_player_average_stats AS
 SELECT 
     p.id as player_id,
     p.nom,
@@ -18,11 +22,10 @@ SELECT
     NULL::numeric as pourcentage_attaque
 FROM players p
 LEFT JOIN performances perf ON p.id = perf.player_id
-WHERE p.actif = TRUE
 GROUP BY p.id, p.nom, p.prenom, p.position;
 
 -- Vue des absences en cours
-CREATE OR REPLACE VIEW v_current_absences AS
+CREATE VIEW v_current_absences AS
 SELECT 
     a.*,
     p.nom,

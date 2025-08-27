@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 
 public class CreateUserRequest {
 
@@ -31,16 +32,20 @@ public class CreateUserRequest {
     @Size(max = 20, message = "Le numéro de téléphone ne peut pas dépasser 20 caractères")
     private String telephone;
 
+    // Salaire optionnel
+    private BigDecimal salaire;
+
     // Constructeurs
     public CreateUserRequest() {}
 
-    public CreateUserRequest(String nom, String prenom, String email, String motDePasse, Role role, String telephone) {
+    public CreateUserRequest(String nom, String prenom, String email, String motDePasse, Role role, String telephone, BigDecimal salaire) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.motDePasse = motDePasse;
         this.role = role;
         this.telephone = telephone;
+        this.salaire = salaire;
     }
 
     // Getters et Setters
@@ -90,5 +95,13 @@ public class CreateUserRequest {
 
     public void setTelephone(String telephone) {
         this.telephone = telephone;
+    }
+
+    public BigDecimal getSalaire() {
+        return salaire;
+    }
+
+    public void setSalaire(BigDecimal salaire) {
+        this.salaire = salaire;
     }
 }

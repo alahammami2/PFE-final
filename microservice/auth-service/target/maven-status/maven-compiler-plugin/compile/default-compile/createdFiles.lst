@@ -7,12 +7,14 @@ com\volleyball\authservice\repository\UserRepository.class
 com\volleyball\authservice\dto\UserResponse.class
 com\volleyball\authservice\security\JwtUtil.class
 com\volleyball\authservice\config\SecurityConfig.class
+com\volleyball\authservice\dto\CreateUserResult.class
 com\volleyball\authservice\dto\AuthResponse.class
 com\volleyball\authservice\AuthServiceApplication.class
 com\volleyball\authservice\security\JwtAuthenticationFilter.class
-com\volleyball\authservice\config\DatabaseInitializer.class
 com\volleyball\authservice\dto\LoginRequest.class
+com\volleyball\authservice\dto\ResetPasswordResponse.class
 com\volleyball\authservice\controller\AuthController.class
 com\volleyball\authservice\service\AuthService.class
 com\volleyball\authservice\dto\CreateUserRequest.class
 com\volleyball\authservice\service\CustomUserDetailsService.class
+com\volleyball\authservice\dto\UserWithPasswordResponse.class

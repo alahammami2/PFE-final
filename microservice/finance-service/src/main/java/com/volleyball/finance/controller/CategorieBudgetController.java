@@ -50,13 +50,6 @@ public class CategorieBudgetController {
                        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
-    @GetMapping("/by-id-categorie")
-    public ResponseEntity<CategorieBudget> getCategorieBudgetByIdCategorie(@RequestParam Integer idCategorie) {
-        Optional<CategorieBudget> categorie = categorieBudgetService.getCategorieBudgetByIdCategorie(idCategorie);
-        return categorie.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                       .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-    
     @PutMapping("/{id}")
     public ResponseEntity<CategorieBudget> updateCategorieBudget(@PathVariable Long id, @Valid @RequestBody CategorieBudget categorieDetails) {
         try {
@@ -92,26 +85,6 @@ public class CategorieBudgetController {
         }
     }
     
-    @GetMapping("/budget/{budgetId}")
-    public ResponseEntity<List<CategorieBudget>> getCategoriesByBudget(@PathVariable Long budgetId) {
-        try {
-            List<CategorieBudget> categories = categorieBudgetService.getCategoriesByBudget(budgetId);
-            return new ResponseEntity<>(categories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GetMapping("/budget/{budgetId}/ordered")
-    public ResponseEntity<List<CategorieBudget>> getCategoriesByBudgetOrderByMontant(@PathVariable Long budgetId) {
-        try {
-            List<CategorieBudget> categories = categorieBudgetService.getCategoriesByBudgetOrderByMontant(budgetId);
-            return new ResponseEntity<>(categories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
     @GetMapping("/minimum-amount")
     public ResponseEntity<List<CategorieBudget>> getCategoriesWithMinimumAmount(@RequestParam Double montant) {
         try {
@@ -132,43 +105,6 @@ public class CategorieBudgetController {
         }
     }
     
-    @GetMapping("/budget/{budgetId}/total")
-    public ResponseEntity<Double> getTotalMontantAlloueByBudget(@PathVariable Long budgetId) {
-        try {
-            Double total = categorieBudgetService.getTotalMontantAlloueByBudget(budgetId);
-            return new ResponseEntity<>(total, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GetMapping("/{id}/with-depenses")
-    public ResponseEntity<CategorieBudget> getCategorieWithDepenses(@PathVariable Long id) {
-        Optional<CategorieBudget> categorie = categorieBudgetService.getCategorieWithDepenses(id);
-        return categorie.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                       .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-    
-    @GetMapping("/with-remaining-budget")
-    public ResponseEntity<List<CategorieBudget>> getCategoriesWithRemainingBudget() {
-        try {
-            List<CategorieBudget> categories = categorieBudgetService.getCategoriesWithRemainingBudget();
-            return new ResponseEntity<>(categories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    @GetMapping("/budget/{budgetId}/count")
-    public ResponseEntity<Long> countCategoriesByBudget(@PathVariable Long budgetId) {
-        try {
-            Long count = categorieBudgetService.countCategoriesByBudget(budgetId);
-            return new ResponseEntity<>(count, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
     @PutMapping("/{id}/ajuster")
     public ResponseEntity<CategorieBudget> ajusterMontantAlloue(@PathVariable Long id, @RequestParam Double nouveauMontant) {
         try {
@@ -181,3 +117,4 @@ public class CategorieBudgetController {
         }
     }
 }
+

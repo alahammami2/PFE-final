@@ -40,6 +40,21 @@ public class AdminRequestController {
     }
 
     /**
+     * Définir un statut arbitraire (EN_COURS, REJETEE, etc.)
+     */
+    @PutMapping("/set-status")
+    public ResponseEntity<AdminRequest> setStatus(@RequestParam("id") Long id, @RequestParam("status") RequestStatus status) {
+        try {
+            AdminRequest updated = adminRequestService.setRequestStatus(id, status);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Récupérer toutes les demandes administratives
      */
     @GetMapping

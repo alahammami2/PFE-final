@@ -20,7 +20,7 @@ public class CreatePerformanceFileRequest {
     @NotNull(message = "La taille du fichier est obligatoire")
     private Long fileSize;
 
-    @NotBlank(message = "Le chemin du fichier est obligatoire")
+    @NotNull(message = "Le chemin du fichier ne peut pas être null")
     @Size(max = 500, message = "Le chemin du fichier ne peut pas dépasser 500 caractères")
     private String filePath;
 

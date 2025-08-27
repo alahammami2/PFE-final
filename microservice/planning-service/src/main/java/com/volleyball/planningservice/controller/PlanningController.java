@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/planning")
-@CrossOrigin(origins = "*")
 public class PlanningController {
 
     @Autowired
@@ -155,6 +154,24 @@ public class PlanningController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "Erreur lors de la récupération des événements: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Compter les matchs passés par type (CHAMPIONNAT et COUPE)
+    @GetMapping("/events/matches/past/count")
+    public ResponseEntity<Map<String, Object>> countPastMatchesByType() {
+        try {
+            Map<String, Long> counts = planningService.countPastMatchesByType();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Comptage des matchs passés par type");
+            response.put("data", counts);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Erreur lors du comptage des matchs: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }

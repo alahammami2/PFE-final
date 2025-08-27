@@ -18,11 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+ 
 
 @Configuration
 @EnableWebSecurity
@@ -57,16 +54,26 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 // Endpoints publics
                 .requestMatchers("/login", "/create-user", "/health", "/check-email").permitAll()
+                .requestMatchers("/api/auth/users/count").permitAll()
+                .requestMatchers("/api/auth/users/count/joueurs").permitAll()
+                // Autoriser temporairement la récupération de la liste des utilisateurs pour les tests UI
+                .requestMatchers("/api/auth/users").permitAll()
+                
+                // DEV-ONLY: Autoriser toutes les opérations pendant l'intégration front.
+                // À RESTREINDRE en production (ex: hasRole("ADMIN")).
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/users/**").permitAll()
+                .requestMatchers("/users/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/create-user", "/api/auth/health", "/api/auth/check-email").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 // Endpoints de gestion des utilisateurs (ADMIN seulement)
-                .requestMatchers("/users/**").hasRole("ADMIN")
+                // .requestMatchers("/users/**").hasRole("ADMIN") // REACTIVER EN PROD
                 // Endpoints protégés
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/coach/**").hasAnyRole("ADMIN", "COACH")
@@ -81,18 +88,5 @@ public class SecurityConfig {
         http.headers(headers -> headers.frameOptions().disable());
 
         return http.build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 }

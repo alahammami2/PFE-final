@@ -6,8 +6,11 @@ import com.volleyball.performanceservice.model.Position;
 import com.volleyball.performanceservice.model.StatutJoueur;
 import com.volleyball.performanceservice.repository.PlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -30,19 +33,16 @@ public class PlayerService {
     public Player createPlayer(CreatePlayerRequest request) {
         // Vérifications d'unicité
         if (request.getEmail() != null && playerRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Un joueur avec cet email existe déjà: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Un joueur avec cet email existe déjà: " + request.getEmail());
         }
 
-        if (request.getNumeroMaillot() != null && playerRepository.existsByNumeroMaillot(request.getNumeroMaillot())) {
-            throw new RuntimeException("Un joueur avec ce numéro de maillot existe déjà: " + request.getNumeroMaillot());
-        }
+        // numéro de maillot peut être dupliqué désormais (validation supprimée)
 
         // Création du joueur
         Player player = new Player();
         player.setNom(request.getNom());
         player.setPrenom(request.getPrenom());
         player.setEmail(request.getEmail());
-        player.setTelephone(request.getTelephone());
         player.setDateNaissance(request.getDateNaissance());
         player.setPosition(request.getPosition());
         player.setNumeroMaillot(request.getNumeroMaillot());
@@ -50,10 +50,14 @@ public class PlayerService {
         player.setPoidsKg(request.getPoidsKg());
         player.setSalaire(request.getSalaire());
         player.setStatut(request.getStatut() != null ? request.getStatut() : StatutJoueur.ACTIF);
-        player.setDateDebutEquipe(request.getDateDebutEquipe() != null ? request.getDateDebutEquipe() : LocalDate.now());
-        player.setActif(true);
+        // dateDebutEquipe et actif supprimés
 
-        return playerRepository.save(player);
+        try {
+            return playerRepository.save(player);
+        } catch (DataIntegrityViolationException ex) {
+            // En cas de contrainte d'unicité au niveau DB
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Contrainte d'unicité violée pour l'email ou le numéro de maillot", ex);
+        }
     }
 
     /**
@@ -61,7 +65,7 @@ public class PlayerService {
      */
     @Transactional(readOnly = true)
     public List<Player> getAllActivePlayers() {
-        return playerRepository.findByActifTrue();
+        return playerRepository.findByStatut(StatutJoueur.ACTIF);
     }
 
     /**
@@ -86,7 +90,7 @@ public class PlayerService {
      */
     @Transactional(readOnly = true)
     public List<Player> getPlayersByPosition(Position position) {
-        return playerRepository.findByPositionAndActifTrue(position);
+        return playerRepository.findByPosition(position);
     }
 
     /**
@@ -114,19 +118,15 @@ public class PlayerService {
         // Vérifications d'unicité (exclure le joueur actuel)
         if (request.getEmail() != null && !request.getEmail().equals(player.getEmail()) 
             && playerRepository.existsByEmailAndIdNot(request.getEmail(), id)) {
-            throw new RuntimeException("Un autre joueur avec cet email existe déjà: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Un autre joueur avec cet email existe déjà: " + request.getEmail());
         }
 
-        if (request.getNumeroMaillot() != null && !request.getNumeroMaillot().equals(player.getNumeroMaillot()) 
-            && playerRepository.existsByNumeroMaillotAndIdNot(request.getNumeroMaillot(), id)) {
-            throw new RuntimeException("Un autre joueur avec ce numéro de maillot existe déjà: " + request.getNumeroMaillot());
-        }
+        // numéro de maillot peut être dupliqué désormais (validation supprimée)
 
         // Mise à jour des champs
         player.setNom(request.getNom());
         player.setPrenom(request.getPrenom());
         player.setEmail(request.getEmail());
-        player.setTelephone(request.getTelephone());
         player.setDateNaissance(request.getDateNaissance());
         player.setPosition(request.getPosition());
         player.setNumeroMaillot(request.getNumeroMaillot());
@@ -136,8 +136,39 @@ public class PlayerService {
         if (request.getStatut() != null) {
             player.setStatut(request.getStatut());
         }
-        if (request.getDateDebutEquipe() != null) {
-            player.setDateDebutEquipe(request.getDateDebutEquipe());
+        // dateDebutEquipe supprimée
+
+        return playerRepository.save(player);
+    }
+
+    /**
+     * Mettre à jour un joueur par email (pratique pour intégration front)
+     */
+    public Player updateByEmail(String email, CreatePlayerRequest request) {
+        if (email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email requis");
+        }
+        Player player = playerRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Joueur non trouvé avec l'email: " + email));
+
+        // Vérifier unicité si email changé
+        if (request.getEmail() != null && !request.getEmail().equals(player.getEmail())
+                && playerRepository.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Un autre joueur avec cet email existe déjà: " + request.getEmail());
+        }
+
+        // Mise à jour des champs
+        player.setNom(request.getNom());
+        player.setPrenom(request.getPrenom());
+        player.setEmail(request.getEmail());
+        player.setDateNaissance(request.getDateNaissance());
+        player.setPosition(request.getPosition());
+        player.setNumeroMaillot(request.getNumeroMaillot());
+        player.setTailleCm(request.getTailleCm());
+        player.setPoidsKg(request.getPoidsKg());
+        player.setSalaire(request.getSalaire());
+        if (request.getStatut() != null) {
+            player.setStatut(request.getStatut());
         }
 
         return playerRepository.save(player);
@@ -157,7 +188,6 @@ public class PlayerService {
      */
     public void deactivatePlayer(Long id) {
         Player player = getPlayerById(id);
-        player.setActif(false);
         player.setStatut(StatutJoueur.INACTIF);
         playerRepository.save(player);
     }
@@ -167,7 +197,6 @@ public class PlayerService {
      */
     public Player reactivatePlayer(Long id) {
         Player player = getPlayerById(id);
-        player.setActif(true);
         player.setStatut(StatutJoueur.ACTIF);
         return playerRepository.save(player);
     }
@@ -181,11 +210,19 @@ public class PlayerService {
     }
 
     /**
+     * Supprimer un joueur par email (si existe)
+     */
+    public void deleteByEmail(String email) {
+        if (email == null || email.isBlank()) return;
+        playerRepository.findByEmail(email).ifPresent(playerRepository::delete);
+    }
+
+    /**
      * Obtenir les statistiques des joueurs
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getPlayersStatistics() {
-        long totalActifs = playerRepository.countActivePlayer();
+        long totalActifs = playerRepository.countByStatut(StatutJoueur.ACTIF);
         long totalBlesses = playerRepository.countByStatut(StatutJoueur.BLESSE);
         long totalSuspendus = playerRepository.countByStatut(StatutJoueur.SUSPENDU);
         List<Object[]> repartitionPositions = playerRepository.countPlayersByPosition();

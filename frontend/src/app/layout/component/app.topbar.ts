@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -6,6 +6,7 @@ import { StyleClassModule } from 'primeng/styleclass';
 import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
 import { MenuModule } from 'primeng/menu';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-topbar',
@@ -67,30 +68,36 @@ import { MenuModule } from 'primeng/menu';
         </div>
     </div>`
 })
-export class AppTopbar {
+export class AppTopbar implements OnInit {
     items!: MenuItem[];
     userName: string = 'Utilisateur';
-    userMenuItems: MenuItem[] = [
-        {
-            label: 'Mon Profil',
-            icon: 'pi pi-user',
-            disabled: true,
-            styleClass: 'text-gray-500 cursor-not-allowed'
-        },
-        {
-            separator: true
-        },
-        {
-            label: 'Déconnexion',
-            icon: 'pi pi-sign-out',
-            command: () => {
-                // Redirection vers la page d'authentification
-                this.router.navigate(['/auth/login']);
-            }
-        }
-    ];
+    userMenuItems: MenuItem[] = [];
 
-    constructor(public layoutService: LayoutService, private router: Router) {}
+    constructor(public layoutService: LayoutService, private router: Router, private authService: AuthService) {}
+
+    ngOnInit(): void {
+        // Update topbar display and menu when user changes
+        this.authService.currentUser$.subscribe((user) => {
+            this.userName = user ? `${user.prenom} ${user.nom}` : 'Utilisateur';
+            this.userMenuItems = [
+                {
+                    label: this.userName,
+                    icon: 'pi pi-id-card',
+                    disabled: true,
+                    styleClass: 'text-gray-500 cursor-not-allowed'
+                },
+                { separator: true },
+                {
+                    label: 'Déconnexion',
+                    icon: 'pi pi-sign-out',
+                    command: () => {
+                        this.authService.logout();
+                        this.router.navigate(['/auth/login']);
+                    }
+                }
+            ];
+        });
+    }
 
     toggleDarkMode() {
         this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));

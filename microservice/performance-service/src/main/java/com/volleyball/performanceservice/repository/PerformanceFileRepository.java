@@ -101,4 +101,12 @@ public interface PerformanceFileRepository extends JpaRepository<PerformanceFile
      */
     @Query("SELECT pf.fileType, COUNT(pf), SUM(pf.fileSize) FROM PerformanceFile pf GROUP BY pf.fileType")
     List<Object[]> getFileStatsByType();
+
+    /**
+     * Charger tous les fichiers avec leurs associations nécessaires pour éviter les lazy-loading issues
+     */
+    @Query("SELECT DISTINCT pf FROM PerformanceFile pf " +
+           "LEFT JOIN FETCH pf.performance p " +
+           "LEFT JOIN FETCH p.player")
+    List<PerformanceFile> findAllWithPerformanceAndPlayer();
 }

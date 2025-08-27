@@ -50,13 +50,6 @@ public class BudgetController {
                      .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
-    @GetMapping("/by-id-finance")
-    public ResponseEntity<Budget> getBudgetByIdFinance(@RequestParam String idFinance) {
-        Optional<Budget> budget = budgetService.getBudgetByIdFinance(idFinance);
-        return budget.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-    
     @PutMapping("/{id}")
     public ResponseEntity<Budget> updateBudget(@PathVariable Long id, @Valid @RequestBody Budget budgetDetails) {
         try {
@@ -122,23 +115,21 @@ public class BudgetController {
         }
     }
     
-    @GetMapping("/{id}/with-categories")
-    public ResponseEntity<Budget> getBudgetWithCategories(@PathVariable Long id) {
-        Optional<Budget> budget = budgetService.getBudgetWithCategories(id);
-        return budget.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-    
-    @GetMapping("/by-category")
-    public ResponseEntity<List<Budget>> getBudgetsByCategorieName(@RequestParam String nomCategorie) {
+    // Record a computed total amount into budgets table (simple append)
+    @PostMapping("/record-total")
+    public ResponseEntity<Budget> recordTotal(@RequestParam("montant") Double montant) {
         try {
-            List<Budget> budgets = budgetService.getBudgetsByCategorieName(nomCategorie);
-            return new ResponseEntity<>(budgets, HttpStatus.OK);
+            if (montant == null || montant < 0) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            // Mettre à jour (ou créer) le budget avec id=1
+            Budget saved = budgetService.setMontantForId(1L, montant);
+            return new ResponseEntity<>(saved, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @PutMapping("/{id}/ajuster")
     public ResponseEntity<Budget> ajusterBudget(@PathVariable Long id, @RequestParam Double nouveauMontant) {
         try {
@@ -163,3 +154,4 @@ public class BudgetController {
         }
     }
 }
+

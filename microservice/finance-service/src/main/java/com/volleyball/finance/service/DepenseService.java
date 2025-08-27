@@ -30,18 +30,15 @@ public class DepenseService {
         return depenseRepository.findById(id);
     }
     
-    public Optional<Depense> getDepenseByIdDepense(Integer idDepense) {
-        return depenseRepository.findByIdDepense(idDepense);
-    }
-    
     public Depense updateDepense(Long id, Depense depenseDetails) {
         Depense depense = depenseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dépense non trouvée avec l'ID: " + id));
         
-        depense.setIdDepense(depenseDetails.getIdDepense());
         depense.setMontant(depenseDetails.getMontant());
         depense.setDate(depenseDetails.getDate());
         depense.setDescription(depenseDetails.getDescription());
+        depense.setStatut(depenseDetails.getStatut());
+        depense.setCategorie(depenseDetails.getCategorie());
         
         return depenseRepository.save(depense);
     }
@@ -53,14 +50,6 @@ public class DepenseService {
     }
     
     // Business Logic Methods
-    public List<Depense> getDepensesByCategorie(Long categorieBudgetId) {
-        return depenseRepository.findByCategorieBudgetId(categorieBudgetId);
-    }
-    
-    public List<Depense> getDepensesByCategorieOrderByDate(Long categorieBudgetId) {
-        return depenseRepository.findByCategorieBudgetIdOrderByDateDesc(categorieBudgetId);
-    }
-    
     public List<Depense> getDepensesByPeriode(LocalDate dateDebut, LocalDate dateFin) {
         return depenseRepository.findByDateBetween(dateDebut, dateFin);
     }
@@ -85,16 +74,8 @@ public class DepenseService {
         return depenseRepository.findByMoisEtAnnee(mois, annee);
     }
     
-    public Double getTotalMontantByCategorie(Long categorieBudgetId) {
-        return depenseRepository.getTotalMontantByCategorie(categorieBudgetId);
-    }
-    
     public Double getTotalMontantByPeriode(LocalDate dateDebut, LocalDate dateFin) {
         return depenseRepository.getTotalMontantByPeriode(dateDebut, dateFin);
-    }
-    
-    public Long countDepensesByCategorie(Long categorieBudgetId) {
-        return depenseRepository.countDepensesByCategorie(categorieBudgetId);
     }
     
     public List<Depense> getRecentDepensesOrderByMontant(LocalDate dateDebut) {
@@ -115,3 +96,4 @@ public class DepenseService {
         depense.consulter();
     }
 }
+

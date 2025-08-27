@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -8,7 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
-import { AttendanceService, AbsenceRecord, PresenceRecord } from '../../services/attendance.service';
+import { AbsenceApiService, AbsenceDto } from '../../services/absence.service';
+import { HasAnyRoleDirective } from '../../directives/has-any-role.directive';
 
 type AbsenceStatus = 'En attente' | 'Approuvée' | 'Refusée';
 
@@ -26,7 +27,7 @@ interface AbsenceRow {
 @Component({
     selector: 'app-absence',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, TableModule, ButtonModule, DialogModule, InputTextModule, DatePickerModule, SelectModule, TagModule],
+    imports: [CommonModule, ReactiveFormsModule, TableModule, ButtonModule, DialogModule, InputTextModule, DatePickerModule, SelectModule, TagModule, HasAnyRoleDirective],
     template: `
         <div class="card">
             <div class="flex items-center justify-between mb-4">
@@ -57,9 +58,8 @@ interface AbsenceRow {
                         <tr>
                             <td colspan="6">
                                 <div class="flex gap-2 justify-center py-2">
-                                    <p-button size="small" label="Approuver" icon="pi pi-check" severity="success" (onClick)="setStatus(row, 'Approuvée'); $event.stopPropagation()" />
-                                    <p-button size="small" label="Refuser" icon="pi pi-times" severity="danger" (onClick)="setStatus(row, 'Refusée'); $event.stopPropagation()" />
-                                    
+                                    <p-button *hasAnyRole="['ADMIN','COACH']" size="small" label="Approuver" icon="pi pi-check" severity="success" (onClick)="setStatus(row, 'Approuvée'); $event.stopPropagation()" />
+                                    <p-button *hasAnyRole="['ADMIN','COACH']" size="small" label="Refuser" icon="pi pi-times" severity="danger" (onClick)="setStatus(row, 'Refusée'); $event.stopPropagation()" />
                                 </div>
                             </td>
                         </tr>
@@ -99,27 +99,11 @@ interface AbsenceRow {
                     </div>
                 </ng-template>
             </p-dialog>
-
-            <div class="mt-6">
-                <div class="text-lg font-semibold mb-2">Présences marquées</div>
-                <p-table [value]="presences" [rows]="5" [paginator]="true" dataKey="id">
-                    <ng-template #header>
-                        <tr><th>Date</th><th>Membre</th><th>Rôle</th><th>Evènement</th></tr>
-                    </ng-template>
-                    <ng-template #body let-p>
-                        <tr><td>{{ p.date }}</td><td>{{ p.membre }}</td><td>{{ p.role }}</td><td>{{ p.evenement }}</td></tr>
-                    </ng-template>
-                    <ng-template #emptymessage><tr><td colspan="4">Aucune présence.</td></tr></ng-template>
-                </p-table>
-            </div>
         </div>
     `
 })
-export class AbsencePage {
-    rows: AbsenceRow[] = [
-        { id: 1, membre: 'Ahmed Ben Ali', role: 'Joueur', dateDebut: '10-08-2025', dateFin: '12-08-2025', type: 'Maladie', justification: 'Grippe', statut: 'En attente' },
-        { id: 2, membre: 'Sana Trabelsi', role: 'Coach', dateDebut: '05-08-2025', dateFin: '05-08-2025', type: 'Personnel', justification: 'Administratif', statut: 'Approuvée' }
-    ];
+export class AbsencePage implements OnInit {
+    rows: AbsenceRow[] = [];
 
     expandedRowIndex: number | null = null;
     addDialogVisible = false;
@@ -144,9 +128,7 @@ export class AbsencePage {
         { label: 'Autre', value: 'Autre' }
     ];
 
-    presences: PresenceRecord[] = [];
-
-    constructor(private fb: FormBuilder, private attendance: AttendanceService) {
+    constructor(private fb: FormBuilder, private absenceApi: AbsenceApiService) {
         this.addForm = this.fb.group({
             nom: ['', Validators.required],
             prenom: ['', Validators.required],
@@ -157,26 +139,55 @@ export class AbsencePage {
             justification: ['']
         });
         this.justifyForm = this.fb.group({ justification: ['', Validators.required] });
-        this.attendance.presences$.subscribe((p) => (this.presences = p));
-        this.attendance.absences$.subscribe((list) => {
-            // Merge new absences coming from calendar
-            if (list.length) {
-                // naive merge: show service absences first
-                const existingIds = new Set(this.rows.map((r) => r.id));
-                const mapped: AbsenceRow[] = list.map((a) => ({
-                    id: (this.rows[0]?.id || 0) + 1,
-                    membre: a.membre,
-                    role: a.role,
-                    dateDebut: a.dateDebut,
-                    dateFin: a.dateFin,
-                    type: a.type as any,
-                    justification: a.justification,
-                    statut: a.statut
-                }));
-                // Simple prepend (avoid duplicates in real impl.)
-                this.rows = [...mapped, ...this.rows];
+    }
+
+    ngOnInit(): void {
+        this.loadAbsences();
+    }
+
+    private loadAbsences() {
+        this.absenceApi.getAll().subscribe({
+            next: (res) => {
+                const data = res.data || [];
+                this.rows = data.map((a) => this.mapAbsenceDtoToRow(a));
+            },
+            error: (err) => {
+                console.error('Erreur lors du chargement des absences', err);
             }
         });
+    }
+
+    private mapAbsenceDtoToRow(a: AbsenceDto): AbsenceRow {
+        const membre = a.player ? `${a.player.nom} ${a.player.prenom}`.trim() : '—';
+        const role = a.player?.position || 'Joueur';
+        const fmt = (iso?: string | null) => {
+            if (!iso) return '';
+            const [y, m, d] = iso.split('-');
+            return `${d}-${m}-${y}`;
+        };
+        const statut: AbsenceStatus = (
+            a.statut === 'EN_ATTENTE' ? 'En attente' :
+            a.statut === 'APPROUVEE' ? 'Approuvée' :
+            'Refusée'
+        );
+        const typeMap: Record<string, AbsenceRow['type']> = {
+            MALADIE: 'Maladie',
+            BLESSURE: 'Blessure',
+            PERSONNEL: 'Personnel',
+            PROFESSIONNEL: 'éducation',
+            VACANCES: 'Autre',
+            AUTRE: 'Autre'
+        };
+        return {
+            id: a.id,
+            membre,
+            role,
+            dateDebut: fmt(a.dateDebut),
+            dateFin: fmt(a.dateFin || null),
+            type: typeMap[a.typeAbsence] ?? 'Autre',
+            justification: a.raison || a.commentaires || '',
+            statut
+        };
     }
 
     getStatusSeverity(s: AbsenceStatus): 'info' | 'success' | 'danger' | 'warn' {
@@ -190,13 +201,33 @@ export class AbsencePage {
         }
     }
 
-    toggleActionsIndex(idx: number) {
-        this.expandedRowIndex = this.expandedRowIndex === idx ? null : idx;
+    setStatus(row: AbsenceRow, s: AbsenceStatus) {
+        // Call backend to persist status change
+        if (!row?.id) return;
+        if (s === 'Approuvée') {
+            this.absenceApi.approve(row.id).subscribe({
+                next: () => {
+                    row.statut = 'Approuvée';
+                    this.expandedRowIndex = null;
+                },
+                error: (err) => console.error('Erreur lors de l\'approbation', err)
+            });
+        } else if (s === 'Refusée') {
+            this.absenceApi.refuse(row.id).subscribe({
+                next: () => {
+                    row.statut = 'Refusée';
+                    this.expandedRowIndex = null;
+                },
+                error: (err) => console.error('Erreur lors du refus', err)
+            });
+        } else {
+            // For 'En attente' we could add a cancel/reset endpoint if needed
+            console.warn('Changement de statut non supporté:', s);
+        }
     }
 
-    setStatus(row: AbsenceRow, s: AbsenceStatus) {
-        row.statut = s;
-        this.expandedRowIndex = null;
+    toggleActionsIndex(idx: number) {
+        this.expandedRowIndex = this.expandedRowIndex === idx ? null : idx;
     }
 
     openAdd() {

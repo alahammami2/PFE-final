@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { TabsModule } from 'primeng/tabs';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -11,10 +11,13 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { ChartModule } from 'primeng/chart';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HasAnyRoleDirective } from '../../directives/has-any-role.directive';
 import { BodyMapComponent } from './body-map';
+import { MedicalApiService, HealthRecordDto, MedicalRendezvousDto, MedicalStatus } from '../../services/medical.service';
 
 interface InjuryRow {
     id: number;
+    playerId: number; // needed for backend updates
     joueur: string;
     blessure: string;
     zone: string; // ex: Genou (gauche)
@@ -34,6 +37,7 @@ interface HistoryRow {
 
 interface AppointmentRow {
     id: number;
+    playerId: number; // needed for backend updates
     joueur: string;
     lieu: string;
     datetime: string; // 01/09/2025 14:30
@@ -58,7 +62,8 @@ interface AppointmentRow {
         SelectModule,
         ChartModule,
         ReactiveFormsModule,
-        BodyMapComponent
+        BodyMapComponent,
+        HasAnyRoleDirective
     ],
     template: `
         <div class="card">
@@ -72,16 +77,16 @@ interface AppointmentRow {
                     <p-tabpanel value="0">
                         <div class="flex items-center justify-between mb-3">
                             <div class="text-lg font-semibold">Blessures en cours</div>
-                            <p-button label="Nouvelle blessure" icon="pi pi-plus" (onClick)="openAdd()" />
+                            <p-button *hasAnyRole="['JOUEUR','STAF_MEDICAL']" label="Nouvelle blessure" icon="pi pi-plus" (onClick)="openAdd()" />
                         </div>
                         <p-table [value]="currentInjuries" [rows]="10" [paginator]="true" dataKey="id" [rowHover]="true" [tableStyle]="{ 'min-width': '80rem' }">
                             <ng-template #header>
                                 <tr>
-                                    <th style="width: 18rem">Joueur</th>
+                                    <th pSortableColumn="joueur" style="width: 18rem">Joueur <p-sortIcon field="joueur"></p-sortIcon></th>
                                     <th style="width: 18rem">Blessure/Maladie</th>
                                     <th style="width: 14rem">Statut physique</th>
                                     <th style="width: 14rem">Date de blessure</th>
-                                    <th style="width: 12rem">Statut</th>
+                                    <th pSortableColumn="status" style="width: 12rem">Statut <p-sortIcon field="status"></p-sortIcon></th>
                                 </tr>
                             </ng-template>
                             <ng-template #body let-row let-i="rowIndex">
@@ -101,9 +106,11 @@ interface AppointmentRow {
                                     <tr>
                                         <td colspan="5">
                                             <div class="flex gap-2 justify-center py-2">
-                                                <p-button size="small" label="Rendez-vous" icon="pi pi-calendar" (onClick)="openAppointment(row); $event.stopPropagation()"></p-button>
-                                                <p-button size="small" label="Modifier" icon="pi pi-pencil" (onClick)="editInjury(row); $event.stopPropagation()"></p-button>
-                                                <p-button size="small" label="Rétabli" icon="pi pi-check" severity="success" (onClick)="markRecovered(row); $event.stopPropagation()"></p-button>
+                                                <ng-container *hasAnyRole="['STAF_MEDICAL']">
+                                                    <p-button size="small" label="Rendez-vous" icon="pi pi-calendar" (onClick)="openAppointment(row); $event.stopPropagation()"></p-button>
+                                                    <p-button size="small" label="Modifier" icon="pi pi-pencil" (onClick)="editInjury(row); $event.stopPropagation()"></p-button>
+                                                    <p-button size="small" label="Rétabli" icon="pi pi-check" severity="success" (onClick)="markRecovered(row); $event.stopPropagation()"></p-button>
+                                                </ng-container>
                                             </div>
                                         </td>
                                     </tr>
@@ -280,9 +287,11 @@ interface AppointmentRow {
                                     <tr>
                                         <td colspan="6">
                                             <div class="flex gap-2 justify-center py-2">
-                                                <p-button size="small" label="Supprimer" icon="pi pi-trash" severity="danger" (onClick)="deleteAppointment(row); $event.stopPropagation()"></p-button>
-                                                <p-button size="small" label="Modifier" icon="pi pi-pencil" (onClick)="editAppointment(row); $event.stopPropagation()"></p-button>
-                                                <p-button size="small" label="Confirmé" icon="pi pi-check" severity="success" (onClick)="confirmAppointment(row); $event.stopPropagation()"></p-button>
+                                                <ng-container *hasAnyRole="['STAF_MEDICAL']">
+                                                    <p-button size="small" label="Supprimer" icon="pi pi-trash" severity="danger" (onClick)="deleteAppointment(row); $event.stopPropagation()"></p-button>
+                                                    <p-button size="small" label="Modifier" icon="pi pi-pencil" (onClick)="editAppointment(row); $event.stopPropagation()"></p-button>
+                                                </ng-container>
+                                                <p-button *hasAnyRole="['JOUEUR']" size="small" label="Confirmé" icon="pi pi-check" severity="success" (onClick)="confirmAppointment(row); $event.stopPropagation()"></p-button>
                                             </div>
                                         </td>
                                     </tr>
@@ -305,7 +314,7 @@ interface AppointmentRow {
         </div>
     `
 })
-export class MedicalCenterPage {
+export class MedicalCenterPage implements OnInit {
     expandedRowId: number | null = null; // legacy
     expandedRowIndex: number | null = null;
     appointmentsExpandedRowIndex: number | null = null;
@@ -321,41 +330,13 @@ export class MedicalCenterPage {
     editDialogVisible = false;
     editForm!: FormGroup;
     selectedRow: InjuryRow | null = null;
-    currentInjuries: InjuryRow[] = [
-        {
-            id: 1,
-            joueur: 'Jurrien Timber',
-            blessure: 'Entorse des ligaments croisés',
-            zone: 'Genou (gauche)',
-            dateBlessure: '11-05-2024',
-            status: 'En suivi'
-        },
-        {
-            id: 2,
-            joueur: 'Oleksandr Zinchenko',
-            blessure: 'Déchirure au mollet',
-            zone: 'Mollet (gauche)',
-            dateBlessure: '23-07-2023',
-            status: 'En suivi'
-        },
-        {
-            id: 3,
-            joueur: 'Mohamed Elneny',
-            blessure: 'Entorse des ligaments croisés',
-            zone: 'Genou (gauche)',
-            dateBlessure: '18-07-2023',
-            status: 'Repos'
-        }
-    ];
+    currentInjuries: InjuryRow[] = [];
 
     historyInjuries: HistoryRow[] = [
         { id: 10, joueur: 'Mehdi Jlassi', type: 'Contracture', gravite: 'Légère', date: '10-04-2025', indisponibilite: '5 jours', statut: 'Rétabli' }
     ];
 
-    appointments: AppointmentRow[] = [
-        { id: 1, joueur: 'Jurrien Timber', lieu: 'Clinique Sportive', datetime: '12-05-2024 10:00', priorite: 'Haute', note: 'Contrôle genou', statut: 'En attente' },
-        { id: 2, joueur: 'Oleksandr Zinchenko', lieu: 'Hôpital Central', datetime: '01-08-2023 15:30', priorite: 'Normale', note: 'Échographie mollet', statut: 'Confirmé' }
-    ];
+    appointments: AppointmentRow[] = [];
 
     priorityOptions = [
         { label: 'Normale', value: 'Normale' },
@@ -369,7 +350,7 @@ export class MedicalCenterPage {
         { label: 'Rétabli', value: 'Rétabli' }
     ];
 
-    // Chart data for résumé de la saison
+    // Chart data for résumé de la saison (single dataset: Hommes)
     injuryChartData = {
         labels: ['Genou', 'Mollet', 'Cuisse', 'Épaule', 'Tête', 'Abdomen'],
         datasets: [
@@ -377,16 +358,154 @@ export class MedicalCenterPage {
                 label: 'Hommes',
                 backgroundColor: '#22d3ee', // cyan-400
                 borderColor: '#06b6d4',
-                data: [5, 3, 4, 2, 1, 2]
-            },
-            {
-                label: 'Femmes',
-                backgroundColor: '#fb7185', // rose-400
-                borderColor: '#f43f5e',
-                data: [2, 2, 3, 1, 0, 1]
+                data: [0, 0, 0, 0, 0, 0]
             }
         ]
     } as any;
+
+    ngOnInit(): void {
+        this.loadHealthRecords();
+        this.loadRendezvous();
+    }
+
+    private loadHealthRecords() {
+        this.medicalApi.getHealthRecords().subscribe({
+            next: (list: HealthRecordDto[]) => {
+                const rows = (list || []).map((r) => this.mapHealthRecordToInjuryRow(r));
+                // Sort by date desc if available
+                this.currentInjuries = rows.sort((a, b) => {
+                    const da = this.tryParseDate(a.dateBlessure)?.getTime() || 0;
+                    const db = this.tryParseDate(b.dateBlessure)?.getTime() || 0;
+                    return db - da;
+                });
+                this.updateInjuryChartFromRows();
+            },
+            error: (err) => console.error('Erreur chargement dossiers santé:', err)
+        });
+    }
+
+    private updateInjuryChartFromRows() {
+        const labels = ['Genou', 'Mollet', 'Cuisse', 'Épaule', 'Tête', 'Abdomen'];
+        const counts = labels.map(() => 0);
+        for (const r of this.currentInjuries) {
+            const z = (r.zone || '').toLowerCase();
+            if (z.includes('genou')) counts[0]++;
+            else if (z.includes('mollet')) counts[1]++;
+            else if (z.includes('cuisse') || z.includes('quadriceps')) counts[2]++;
+            else if (z.includes('épaule') || z.includes('epaule') || z.includes('bras')) counts[3]++;
+            else if (z.includes('tête') || z.includes('tete') || z.includes('crâne') || z.includes('crane')) counts[4]++;
+            else if (z.includes('abdomen')) counts[5]++;
+        }
+        this.injuryChartData = {
+            labels,
+            datasets: [
+                {
+                    label: 'Hommes',
+                    backgroundColor: '#22d3ee',
+                    borderColor: '#06b6d4',
+                    data: counts
+                }
+            ]
+        } as any;
+    }
+
+    private loadRendezvous() {
+        this.medicalApi.listRendezvous().subscribe({
+            next: (list: MedicalRendezvousDto[]) => {
+                const rows = (list || []).map((rv) => this.mapRendezvousToAppointmentRow(rv));
+                this.appointments = rows.sort((a, b) => {
+                    const da = this.tryParseDateTime(a.datetime)?.getTime() || 0;
+                    const db = this.tryParseDateTime(b.datetime)?.getTime() || 0;
+                    return db - da;
+                });
+            },
+            error: (err) => console.error('Erreur chargement rendez-vous:', err)
+        });
+    }
+
+    private mapHealthRecordToInjuryRow(r: HealthRecordDto): InjuryRow {
+        const statusLabel = this.statusEnumToLabel(r.status);
+        const dateStr = r.blessureDate ? this.isoDateToDisplay(r.blessureDate) : '-';
+        return {
+            id: r.id,
+            playerId: r.playerId as unknown as number,
+            joueur: r.playerName,
+            blessure: r.blessureType || '-',
+            zone: r.statutPhysique || '-',
+            dateBlessure: dateStr,
+            status: statusLabel
+        } as InjuryRow;
+    }
+
+    private mapRendezvousToAppointmentRow(rv: MedicalRendezvousDto): AppointmentRow {
+        return {
+            id: rv.id,
+            playerId: rv.playerId as unknown as number,
+            joueur: rv.playerName,
+            lieu: rv.lieu || '-',
+            datetime: this.isoDateTimeToDisplay(rv.rendezvousDatetime),
+            priorite: (rv.priority as any) || 'Normale',
+            note: rv.notes || '',
+            statut: this.rvStatusToLabel(rv.status)
+        } as AppointmentRow;
+    }
+
+    private statusEnumToLabel(s: MedicalStatus): InjuryRow['status'] {
+        switch (s) {
+            case 'RETABLI':
+                return 'Rétabli';
+            case 'REPOS':
+                return 'Repos';
+            default:
+                return 'En suivi';
+        }
+    }
+
+    private rvStatusToLabel(s?: string | null): AppointmentRow['statut'] {
+        switch ((s || '').toUpperCase()) {
+            case 'CONFIRMED':
+                return 'Confirmé';
+            case 'CANCELLED':
+                return 'Annulé';
+            default:
+                return 'En attente';
+        }
+    }
+
+    private isoDateToDisplay(iso: string): string {
+        // iso yyyy-MM-dd
+        const [y, m, d] = iso.split('T')[0].split('-').map((x) => parseInt(x, 10));
+        return `${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y}`;
+    }
+
+    private isoDateTimeToDisplay(iso: string): string {
+        // expect yyyy-MM-ddTHH:mm[:ss]
+        const [date, time] = iso.split('T');
+        const [y, m, d] = date.split('-').map((x) => parseInt(x, 10));
+        const [hh, mi] = (time || '00:00').split(':');
+        return `${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y} ${hh}:${mi}`;
+    }
+
+    private tryParseDate(s: string): Date | null {
+        try {
+            return this.parseDate(s);
+        } catch {
+            return null;
+        }
+    }
+
+    private tryParseDateTime(s: string): Date | null {
+        // format dd-mm-yyyy HH:MM
+        try {
+            const [dpart, tpart] = s.split(' ');
+            const [dd, mm, yyyy] = dpart.split('-').map((x) => parseInt(x, 10));
+            const [hh = 0, mi = 0] = (tpart || '0:0').split(':').map((x) => parseInt(x, 10));
+            const d = new Date(yyyy, mm - 1, dd, hh, mi, 0, 0);
+            return isNaN(d.getTime()) ? null : d;
+        } catch {
+            return null;
+        }
+    }
 
     injuryChartOptions = {
         maintainAspectRatio: false,
@@ -409,12 +528,12 @@ export class MedicalCenterPage {
         }
     } as any;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: FormBuilder, private medicalApi: MedicalApiService) {
         this.addForm = this.fb.group({
             nom: ['', Validators.required],
             prenom: ['', Validators.required],
             dateBlessure: [new Date(), Validators.required],
-            blessure: ['', Validators.required]
+            blessure: ['']
         });
         this.appointmentForm = this.fb.group({ date: [new Date(), Validators.required], time: [new Date(), Validators.required], priorite: ['Normale', Validators.required], lieu: ['', Validators.required], note: [''] });
         this.editForm = this.fb.group({ nom: ['', Validators.required], prenom: ['', Validators.required], dateBlessure: [new Date(), Validators.required], blessure: ['', Validators.required], status: ['En suivi', Validators.required] });
@@ -495,8 +614,13 @@ export class MedicalCenterPage {
     }
 
     markRecovered(row: InjuryRow) {
-        row.status = 'Rétabli';
-        this.expandedRowId = null;
+        this.medicalApi.setHealthStatus(row.id, 'RETABLI').subscribe({
+            next: () => {
+                this.expandedRowId = null;
+                this.loadHealthRecords();
+            },
+            error: (err) => console.error('Erreur MAJ statut santé:', err)
+        });
     }
 
     openAdd() {
@@ -531,55 +655,76 @@ export class MedicalCenterPage {
     submitAdd() {
         if (this.addForm.invalid || !this.selectedZones.length) return;
         const v = this.addForm.value as any;
-        const formatDate = (d: Date) => `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-        const nextId = (this.currentInjuries[0]?.id || 0) + 1;
-        const newRow: InjuryRow = {
-            id: nextId,
-            joueur: `${v.nom} ${v.prenom}`.trim(),
-            blessure: v.blessure || '—',
-            zone: this.labelForZone(this.selectedZones[0]),
-            dateBlessure: formatDate(v.dateBlessure),
-            status: 'En suivi',
+        const isoDate = `${v.dateBlessure.getFullYear()}-${String(v.dateBlessure.getMonth()+1).padStart(2,'0')}-${String(v.dateBlessure.getDate()).padStart(2,'0')}`;
+        const playerName = `${v.nom} ${v.prenom}`.trim();
+        // TEMP: playerId placeholder until player linking is implemented
+        const payload = {
+            playerId: 1,
+            playerName,
+            blessureType: v.blessure || null,
+            blessureDate: isoDate,
+            statutPhysique: this.labelForZone(this.selectedZones[0])
         };
-        
-        this.currentInjuries = [newRow, ...this.currentInjuries];
-        this.addDialogVisible = false;
+        this.medicalApi.createHealthRecord(payload).subscribe({
+            next: () => {
+                this.addDialogVisible = false;
+                this.loadHealthRecords();
+            },
+            error: (err) => console.error('Erreur création dossier santé:', err)
+        });
     }
     submitAppointment() {
         if (this.appointmentForm.invalid || !this.selectedRow) return;
         const v = this.appointmentForm.value as any;
         const d: Date = v.date;
         const t: Date = v.time;
-        const combined = new Date(d.getFullYear(), d.getMonth(), d.getDate(), t.getHours(), t.getMinutes());
-        const formatted = `${String(combined.getDate()).padStart(2, '0')}-${String(combined.getMonth() + 1).padStart(2, '0')}-${combined.getFullYear()} ${String(combined.getHours()).padStart(2, '0')}:${String(combined.getMinutes()).padStart(2, '0')}`;
+        const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:00`;
         if (this.editingAppointmentId) {
-            this.appointments = this.appointments.map(a => a.id === this.editingAppointmentId ? { ...a, lieu: v.lieu, datetime: formatted, priorite: v.priorite, note: v.note || '' } : a);
+            this.medicalApi.updateRendezvous(this.editingAppointmentId, { playerId: this.selectedRow.playerId, playerName: this.selectedRow.joueur, lieu: v.lieu, rendezvousDatetime: iso, priority: v.priorite, notes: v.note || '' }).subscribe({
+                next: () => {
+                    this.afterAppointmentSubmit();
+                },
+                error: (err) => console.error('Erreur modification rendez-vous:', err)
+            });
         } else {
-            const nextId = (this.appointments[0]?.id || 0) + 1;
-            this.appointments = [
-                { id: nextId, joueur: this.selectedRow.joueur, lieu: v.lieu, datetime: formatted, priorite: v.priorite, note: v.note || '', statut: 'En attente' },
-                ...this.appointments
-            ];
+            // TEMP playerId placeholder
+            this.medicalApi.createRendezvous({ playerId: 1, playerName: this.selectedRow.joueur, rendezvousDatetime: iso, lieu: v.lieu, priority: v.priorite, notes: v.note || '' }).subscribe({
+                next: () => {
+                    this.afterAppointmentSubmit();
+                },
+                error: (err) => console.error('Erreur création rendez-vous:', err)
+            });
         }
+    }
+
+    private afterAppointmentSubmit() {
         this.appointmentDialogVisible = false;
         this.injuryAppointmentDialogVisible = false;
         this.editingAppointmentId = null;
+        this.loadRendezvous();
     }
 
     submitEdit() {
         if (this.editForm.invalid || !this.selectedRow) return;
         const v = this.editForm.value as any;
-        const updated: InjuryRow = {
-            ...this.selectedRow,
-            joueur: `${v.nom} ${v.prenom}`.trim(),
-            blessure: v.blessure,
-            dateBlessure: this.formatDate(v.dateBlessure),
-            zone: this.selectedZones.length ? this.labelForZone(this.selectedZones[0]) : this.selectedRow.zone,
-            status: v.status
+        const isoDate = `${v.dateBlessure.getFullYear()}-${String(v.dateBlessure.getMonth()+1).padStart(2,'0')}-${String(v.dateBlessure.getDate()).padStart(2,'0')}`;
+        const statusMap: Record<string, MedicalStatus> = { 'En suivi': 'EN_SUIVI', 'Repos': 'REPOS', 'Rétabli': 'RETABLI' };
+        const updatePayload = {
+            playerId: this.selectedRow.playerId,
+            playerName: `${v.nom} ${v.prenom}`.trim(),
+            blessureType: v.blessure,
+            blessureDate: isoDate,
+            statutPhysique: this.selectedZones.length ? this.labelForZone(this.selectedZones[0]) : this.selectedRow.zone,
+            status: statusMap[v.status] || 'EN_SUIVI'
         };
-        this.currentInjuries = this.currentInjuries.map((r) => (r.id === this.selectedRow!.id ? updated : r));
-        this.editDialogVisible = false;
-        this.expandedRowIndex = null;
+        this.medicalApi.updateHealthRecord(this.selectedRow.id, updatePayload).subscribe({
+            next: () => {
+                this.editDialogVisible = false;
+                this.expandedRowIndex = null;
+                this.loadHealthRecords();
+            },
+            error: (err) => console.error('Erreur modification dossier santé:', err)
+        });
     }
 
     // Appointments actions
@@ -588,13 +733,23 @@ export class MedicalCenterPage {
     }
 
     deleteAppointment(row: AppointmentRow) {
-        this.appointments = this.appointments.filter(a => a.id !== row.id);
-        this.appointmentsExpandedRowIndex = null;
+        this.medicalApi.deleteRendezvous(row.id).subscribe({
+            next: () => {
+                this.appointmentsExpandedRowIndex = null;
+                this.loadRendezvous();
+            },
+            error: (err) => console.error('Erreur suppression rendez-vous:', err)
+        });
     }
 
     confirmAppointment(row: AppointmentRow) {
-        this.appointments = this.appointments.map(a => a.id === row.id ? { ...a, statut: 'Confirmé' } : a);
-        this.appointmentsExpandedRowIndex = null;
+        this.medicalApi.confirmRendezvous(row.id).subscribe({
+            next: () => {
+                this.appointmentsExpandedRowIndex = null;
+                this.loadRendezvous();
+            },
+            error: (err) => console.error('Erreur confirmation rendez-vous:', err)
+        });
     }
 
     editAppointment(row: AppointmentRow) {
@@ -605,7 +760,7 @@ export class MedicalCenterPage {
         const t = new Date();
         t.setHours(parseInt(hh, 10), parseInt(mi, 10), 0, 0);
         this.appointmentForm.reset({ date: d, time: t, priorite: row.priorite, lieu: row.lieu, note: row.note });
-        this.selectedRow = { id: 0, joueur: row.joueur, blessure: '', zone: '', dateBlessure: this.formatDate(new Date()), status: 'En suivi' } as any;
+        this.selectedRow = { id: 0, playerId: row.playerId, joueur: row.joueur, blessure: '', zone: '', dateBlessure: this.formatDate(new Date()), status: 'En suivi' } as any;
         this.editingAppointmentId = row.id;
         this.appointmentDialogHeader = 'Modifier rendez-vous';
         this.appointmentDialogVisible = true;

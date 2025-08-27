@@ -101,6 +101,19 @@ public class AdminRequestService {
         throw new RuntimeException("Demande non trouvée avec l'ID: " + id);
     }
 
+    /**
+     * Définir un statut arbitraire pour une demande (utilitaire pour le front)
+     */
+    public AdminRequest setRequestStatus(Long id, RequestStatus status) {
+        Optional<AdminRequest> requestOpt = adminRequestRepository.findById(id);
+        if (requestOpt.isPresent()) {
+            AdminRequest request = requestOpt.get();
+            request.setStatus(status);
+            return adminRequestRepository.save(request);
+        }
+        throw new RuntimeException("Demande non trouvée avec l'ID: " + id);
+    }
+
     // Query Methods
     public List<AdminRequest> getRequestsByRequester(Long requesterId) {
         return adminRequestRepository.findByRequesterId(requesterId);

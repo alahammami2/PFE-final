@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "depenses")
@@ -114,5 +115,17 @@ public class Depense {
                 ", statut='" + statut + '\'' +
                 ", categorie='" + categorie + '\'' +
                 '}';
+    }
+
+    @JsonIgnore
+    public Object getIdDepense() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getIdDepense'");
+    }
+
+    @JsonIgnore
+    public void setIdDepense(Object idDepense) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setIdDepense'");
     }
 }

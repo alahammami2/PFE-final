@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
-import { RippleModule } from 'primeng/ripple';
+import { Component, OnInit } from '@angular/core';
 import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { HasAnyRoleDirective } from '@/directives/has-any-role.directive';
 
 interface Match {
     id: number;
@@ -16,20 +17,19 @@ interface Match {
 @Component({
     standalone: true,
     selector: 'app-prochains-matchs',
-    imports: [CommonModule, TableModule, ButtonModule, RippleModule],
-    template: `<div class="card mb-8!">
+    imports: [CommonModule, TableModule, HttpClientModule, HasAnyRoleDirective],
+    template: `<div class="card mb-8!" *hasAnyRole="['ADMIN','JOUEUR','COACH','INVITE','STAF_MEDICAL']">
         <div class="font-semibold text-xl mb-4">Prochains Matchs</div>
         <p-table [value]="matches" [paginator]="true" [rows]="5" responsiveLayout="scroll">
-            <ng-template #header>
+            <ng-template pTemplate="header">
                 <tr>
                     <th>Adversaire</th>
                     <th pSortableColumn="date">Date <p-sortIcon field="date"></p-sortIcon></th>
                     <th>Lieu</th>
                     <th>Statut</th>
-                    <th>Actions</th>
                 </tr>
             </ng-template>
-            <ng-template #body let-match>
+            <ng-template pTemplate="body" let-match>
                 <tr>
                     <td style="width: 25%; min-width: 7rem;">{{ match.adversaire }}</td>
                     <td style="width: 25%; min-width: 8rem;">{{ match.date }}</td>
@@ -37,22 +37,68 @@ interface Match {
                     <td style="width: 15%;">
                         <span [class]="getStatusClass(match.statut)">{{ match.statut }}</span>
                     </td>
-                    <td style="width: 10%;">
-                        <button pButton pRipple type="button" icon="pi pi-eye" class="p-button p-component p-button-text p-button-icon-only"></button>
-                    </td>
                 </tr>
             </ng-template>
         </p-table>
     </div>`
 })
-export class ProchainsMatchs {
-    matches: Match[] = [
-        { id: 1, adversaire: 'ES Tunis', date: '15/12/2024', lieu: 'Stade Municipal', statut: 'À venir' },
-        { id: 2, adversaire: 'CA Bizerte', date: '22/12/2024', lieu: 'Salle Omnisport', statut: 'À venir' },
-        { id: 3, adversaire: 'ST Sfax', date: '29/12/2024', lieu: 'Stade Municipal', statut: 'À venir' },
-        { id: 4, adversaire: 'CS Sfaxien', date: '05/01/2025', lieu: 'Salle Omnisport', statut: 'À venir' },
-        { id: 5, adversaire: 'US Monastir', date: '12/01/2025', lieu: 'Stade Municipal', statut: 'À venir' }
-    ];
+export class ProchainsMatchs implements OnInit {
+    matches: Match[] = [];
+
+    constructor(private http: HttpClient) {}
+
+    ngOnInit(): void {
+        // Récupérer les événements à venir depuis planning-service
+        const url = `${environment.planningServiceUrl}/events/upcoming`;
+        this.http.get<any>(url).subscribe({
+            next: (res) => {
+                const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+                const now = new Date();
+                // Types acceptés d'après l'enum backend
+                const allowedEnum = new Set(['CHAMPIONNAT', 'COUPE', 'AMICAL']);
+                const typed = list.filter(ev => allowedEnum.has((ev?.type || '').toString().toUpperCase()));
+
+                // Séparer futurs et passés
+                const getDateStr = (ev: any) => ev?.dateDebut || ev?.date_debut || ev?.date_debuit || ev?.date;
+                const toTime = (s: any) => {
+                    const t = s ? Date.parse(s) : NaN;
+                    return isNaN(t) ? null : t;
+                };
+                const withTime = typed
+                    .map(ev => ({ ev, t: toTime(getDateStr(ev)) }))
+                    .filter(x => x.t !== null) as { ev: any; t: number }[];
+
+                const future = withTime.filter(x => x.t >= now.getTime())
+                    .sort((a, b) => a.t - b.t)
+                    .slice(0, 5)
+                    .map(x => x.ev);
+
+                // Fallback: si aucun futur, prendre les 5 plus récents (même passés)
+                const chosen = future.length > 0
+                    ? future
+                    : withTime.sort((a, b) => b.t - a.t).slice(0, 5).map(x => x.ev);
+
+                this.matches = chosen.map((ev, idx) => ({
+                    id: ev?.id ?? idx,
+                    adversaire: ev?.titre ?? '—',
+                    date: this.formatDate(getDateStr(ev)),
+                    lieu: ev?.lieu ?? '—',
+                    statut: 'À venir'
+                }));
+            },
+            error: () => {
+                this.matches = [];
+            }
+        });
+    }
+
+    private formatDate(s: any): string {
+        if (!s) return '';
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return '';
+        // Affiche date + heure si disponible
+        return d.toLocaleString();
+    }
 
     getStatusClass(statut: string): string {
         switch(statut) {

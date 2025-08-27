@@ -14,7 +14,6 @@ public class Budget {
     private Long id;
     
     @NotNull(message = "Le montant est obligatoire")
-    @PositiveOrZero(message = "Le montant doit être positif ou zéro")
     @Column(name = "montant", nullable = false)
     private Double montant;
     
@@ -54,4 +53,13 @@ public class Budget {
                 ", montant=" + montant +
                 '}';
     }
+
+
+
+    public void consulter() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'consulter'");
+    }
+
+   
 }

@@ -29,15 +29,10 @@ public class BudgetService {
         return budgetRepository.findById(id);
     }
     
-    public Optional<Budget> getBudgetByIdFinance(String idFinance) {
-        return budgetRepository.findByIdFinance(idFinance);
-    }
-    
     public Budget updateBudget(Long id, Budget budgetDetails) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Budget non trouvé avec l'ID: " + id));
         
-        budget.setIdFinance(budgetDetails.getIdFinance());
         budget.setMontant(budgetDetails.getMontant());
         
         return budgetRepository.save(budget);
@@ -66,14 +61,6 @@ public class BudgetService {
         return budgetRepository.countAllBudgets();
     }
     
-    public Optional<Budget> getBudgetWithCategories(Long id) {
-        return budgetRepository.findByIdWithCategories(id);
-    }
-    
-    public List<Budget> getBudgetsByCategorieName(String nomCategorie) {
-        return budgetRepository.findBudgetsByCategorieName(nomCategorie);
-    }
-    
     public Budget ajusterBudget(Long id, Double nouveauMontant) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Budget non trouvé avec l'ID: " + id));
@@ -85,6 +72,28 @@ public class BudgetService {
     public void consulterBudget(Long id) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Budget non trouvé avec l'ID: " + id));
-        budget.consulter();
+        // No-op: consulter() non supporté dans l'entité simplifiée
+        System.out.println("Consultation budget id=" + budget.getId());
+    }
+
+    /**
+     * Met à jour le montant pour un budget avec l'ID donné. S'il n'existe pas, il est créé.
+     */
+    public Budget setMontantForId(Long id, Double montant) {
+        if (id == null) throw new IllegalArgumentException("id ne doit pas être null");
+        if (montant == null) throw new IllegalArgumentException("montant invalide");
+
+        return budgetRepository.findById(id)
+                .map(existing -> {
+                    existing.setMontant(montant);
+                    return budgetRepository.save(existing);
+                })
+                .orElseGet(() -> {
+                    Budget b = new Budget(montant);
+                    // Forcer l'ID à 1 si demandé; en dev Postgres accepte l'insert explicite.
+                    b.setId(id);
+                    return budgetRepository.save(b);
+                });
     }
 }
+

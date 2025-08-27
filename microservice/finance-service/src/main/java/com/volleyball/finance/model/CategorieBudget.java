@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "recettes")
@@ -31,11 +29,6 @@ public class CategorieBudget {
     @NotBlank(message = "La catégorie est obligatoire")
     @Column(name = "categorie", nullable = false)
     private String categorie;
-    
-    // Lien vers Budget supprimé (table budgets indépendante)
-    
-    @OneToMany(mappedBy = "categorieBudget", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Depense> depenses = new ArrayList<>();
     
     // Constructeurs
     public CategorieBudget() {}
@@ -72,27 +65,9 @@ public class CategorieBudget {
 
     public void setCategorie(String categorie) { this.categorie = categorie; }
     
-    // Champ budget supprimé: getters/setters retirés
-    
-    public List<Depense> getDepenses() {
-        return depenses;
-    }
-    
-    public void setDepenses(List<Depense> depenses) {
-        this.depenses = depenses;
-    }
-    
     // Méthodes métier
     public void mettreAJour(Double nouveauMontant) {
         this.montant = nouveauMontant;
-    }
-    
-    public Double getMontantDepense() {
-        return depenses.stream().mapToDouble(Depense::getMontant).sum();
-    }
-    
-    public Double getMontantRestant() {
-        return (montant != null ? montant : 0.0) - getMontantDepense();
     }
     
     @Override
@@ -106,3 +81,4 @@ public class CategorieBudget {
                 '}';
     }
 }
+

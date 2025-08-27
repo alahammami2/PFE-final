@@ -4,6 +4,7 @@ server:
 spring:
   application:
     name: performance-service
+
   
   datasource:
     url: jdbc:postgresql://localhost:5432/performance_db
@@ -25,7 +26,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql,classpath:views.sql
+      data-locations: classpath:views.sql
 
 logging:
   level:
@@ -45,3 +46,11 @@ eureka:
     fetch-registry: true
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
+langchain4j:
+  chat-model:
+    groq:
+      api-key: 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
+      base-url: https://api.groq.com/openai/v1
+      model-name: llama3-8b-8192
+

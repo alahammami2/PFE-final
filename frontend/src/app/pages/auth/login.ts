@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -7,11 +8,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
+import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
+import { LoginRequest } from '../../models/auth.model';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
+    imports: [CommonModule, ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
     template: `
         <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden">
@@ -26,7 +30,7 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
 
                         <div>
                             <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-                            <input pInputText id="email1" type="text" placeholder="Email address" class="w-full md:w-120 mb-8" [(ngModel)]="email" />
+                            <input pInputText id="email1" type="email" placeholder="Email address" class="w-full md:w-120 mb-4" [(ngModel)]="email" />
 
                             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
                             <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
@@ -38,7 +42,8 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                                 </div>
                                 <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
                             </div>
-                            <p-button label="Sign In" styleClass="w-full" routerLink="/dashboard"></p-button>
+                            <div class="text-red-500 mb-4" *ngIf="error">{{ error }}</div>
+                            <p-button label="Sign In" styleClass="w-full" [disabled]="loading" (onClick)="onSignIn()"></p-button>
                         </div>
                     </div>
                 </div>
@@ -52,4 +57,34 @@ export class Login {
     password: string = '';
 
     checked: boolean = false;
+
+    loading = false;
+    error: string | null = null;
+
+    constructor(private authService: AuthService, private router: Router) {}
+
+    onSignIn(): void {
+        this.error = null;
+        if (!this.email || !this.password) {
+            this.error = 'Veuillez saisir votre email et mot de passe.';
+            return;
+        }
+
+        const payload: LoginRequest = {
+            email: this.email,
+            motDePasse: this.password
+        };
+
+        this.loading = true;
+        this.authService.login(payload).subscribe({
+            next: () => {
+                this.loading = false;
+                this.router.navigateByUrl('/dashboard');
+            },
+            error: (err) => {
+                this.loading = false;
+                this.error = err?.error?.message || 'Échec de connexion. Vérifiez vos identifiants.';
+            }
+        });
+    }
 }

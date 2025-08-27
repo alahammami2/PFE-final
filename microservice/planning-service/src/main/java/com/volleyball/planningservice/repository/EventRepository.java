@@ -35,4 +35,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     // Compter les événements par type
     @Query("SELECT e.type, COUNT(e) FROM Event e WHERE e.actif = true GROUP BY e.type")
     List<Object[]> countEventsByType();
+
+    // Compter les événements passés (dateDebut < now) par type
+    long countByTypeAndActifTrueAndDateDebutBefore(EventType type, LocalDateTime before);
 }

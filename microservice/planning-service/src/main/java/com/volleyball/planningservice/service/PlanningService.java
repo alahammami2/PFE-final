@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,9 +38,9 @@ public class PlanningService {
         return convertToResponse(savedEvent);
     }
 
-    // Récupérer tous les événements actifs
+    // Récupérer tous les événements (ne dépend pas de la colonne 'actif')
     public List<EventResponse> getAllEvents() {
-        List<Event> events = eventRepository.findByActifTrue();
+        List<Event> events = eventRepository.findAll();
         return events.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -83,12 +85,26 @@ public class PlanningService {
                 .collect(Collectors.toList());
     }
 
+    // Compter les matchs passés par type (CHAMPIONNAT et COUPE)
+    public Map<String, Long> countPastMatchesByType() {
+        LocalDateTime now = LocalDateTime.now();
+        long championnat = eventRepository.countByTypeAndActifTrueAndDateDebutBefore(EventType.CHAMPIONNAT, now);
+        long coupe = eventRepository.countByTypeAndActifTrueAndDateDebutBefore(EventType.COUPE, now);
+
+        Map<String, Long> result = new HashMap<>();
+        result.put("championnat", championnat);
+        result.put("coupe", coupe);
+        result.put("total", championnat + coupe);
+        return result;
+    }
+
     // Mettre à jour un événement existant
     public EventResponse updateEvent(Long id, UpdateEventRequest request) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID: " + id));
 
-        if (!Boolean.TRUE.equals(event.getActif())) {
+        // Autoriser la mise à jour si actif est true OU null (legacy). Bloquer uniquement si explicitement false.
+        if (Boolean.FALSE.equals(event.getActif())) {
             throw new RuntimeException("Événement inactif avec l'ID: " + id);
         }
 
@@ -106,12 +122,11 @@ public class PlanningService {
 
     // Supprimer un événement (soft delete)
     public void deleteEvent(Long id) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID: " + id));
-        
-        event.setActif(false);
-        event.setDateModification(LocalDateTime.now());
-        eventRepository.save(event);
+        // Hard delete: supprime physiquement l'enregistrement
+        if (!eventRepository.existsById(id)) {
+            throw new RuntimeException("Événement non trouvé avec l'ID: " + id);
+        }
+        eventRepository.deleteById(id);
     }
 
     // Convertir Event en EventResponse

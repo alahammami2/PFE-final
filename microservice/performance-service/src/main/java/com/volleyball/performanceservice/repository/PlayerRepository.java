@@ -27,34 +27,25 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     // Recherche par nom et prénom
     List<Player> findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(String nom, String prenom);
 
-    // Joueurs actifs
-    List<Player> findByActifTrue();
-
     // Joueurs par statut
     List<Player> findByStatut(StatutJoueur statut);
 
     // Joueurs par position
     List<Player> findByPosition(Position position);
 
-    // Joueurs actifs par position
-    List<Player> findByPositionAndActifTrue(Position position);
-
     // Joueurs par tranche d'âge
-    @Query("SELECT p FROM Player p WHERE p.dateNaissance BETWEEN :dateDebut AND :dateFin AND p.actif = true")
+    @Query("SELECT p FROM Player p WHERE p.dateNaissance BETWEEN :dateDebut AND :dateFin AND p.statut = com.volleyball.performanceservice.model.StatutJoueur.ACTIF")
     List<Player> findByAgeRange(@Param("dateDebut") LocalDate dateDebut, @Param("dateFin") LocalDate dateFin);
 
     // Joueurs avec numéro de maillot disponible
-    @Query("SELECT p FROM Player p WHERE p.numeroMaillot IS NOT NULL AND p.actif = true ORDER BY p.numeroMaillot")
+    @Query("SELECT p FROM Player p WHERE p.numeroMaillot IS NOT NULL AND p.statut = com.volleyball.performanceservice.model.StatutJoueur.ACTIF ORDER BY p.numeroMaillot")
     List<Player> findPlayersWithJerseyNumber();
 
     // Statistiques des joueurs
-    @Query("SELECT COUNT(p) FROM Player p WHERE p.actif = true")
-    long countActivePlayer();
-
     @Query("SELECT COUNT(p) FROM Player p WHERE p.statut = :statut")
     long countByStatut(@Param("statut") StatutJoueur statut);
 
-    @Query("SELECT p.position, COUNT(p) FROM Player p WHERE p.actif = true GROUP BY p.position")
+    @Query("SELECT p.position, COUNT(p) FROM Player p WHERE p.statut = com.volleyball.performanceservice.model.StatutJoueur.ACTIF GROUP BY p.position")
     List<Object[]> countPlayersByPosition();
 
     // Vérification d'unicité

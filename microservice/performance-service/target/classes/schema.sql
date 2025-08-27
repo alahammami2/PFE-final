@@ -13,16 +13,13 @@ CREATE TABLE IF NOT EXISTS players (
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE,
-    telephone VARCHAR(20),
     date_naissance DATE NOT NULL,
     position VARCHAR(50) NOT NULL CHECK (position IN ('PASSEUR', 'ATTAQUANT', 'CENTRAL', 'LIBERO', 'POINTU', 'RECEPTEUR_ATTAQUANT')),
-    numero_maillot INTEGER UNIQUE CHECK (numero_maillot > 0 AND numero_maillot <= 99),
+    numero_maillot INTEGER CHECK (numero_maillot > 0 AND numero_maillot <= 99),
     taille_cm INTEGER CHECK (taille_cm > 0),
     poids_kg DECIMAL(5,2) CHECK (poids_kg > 0),
     salaire DECIMAL(12,2) CHECK (salaire >= 0),
     statut VARCHAR(20) NOT NULL DEFAULT 'ACTIF' CHECK (statut IN ('ACTIF', 'BLESSE', 'SUSPENDU', 'INACTIF', 'TRANSFERE')),
-    date_debut_equipe DATE,
-    actif BOOLEAN NOT NULL DEFAULT TRUE,
     date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -33,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_players_prenom ON players(prenom);
 CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
 CREATE INDEX IF NOT EXISTS idx_players_position ON players(position);
 CREATE INDEX IF NOT EXISTS idx_players_statut ON players(statut);
-CREATE INDEX IF NOT EXISTS idx_players_actif ON players(actif);
+-- Index 'actif' supprimé (colonne supprimée)
 CREATE INDEX IF NOT EXISTS idx_players_numero_maillot ON players(numero_maillot);
 
 -- =================================================================
@@ -71,8 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_absences_periode ON absences(date_debut, date_fin
 CREATE TABLE IF NOT EXISTS performances (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    date_performance DATE NOT NULL,
-    type_performance VARCHAR(20) NOT NULL CHECK (type_performance IN ('MATCH', 'ENTRAINEMENT', 'COMPETITION', 'TOURNOI', 'AMICAL')),
+    -- colonnes date_performance et type_performance supprimées
     
     -- Statistiques offensives (attaques supprimées)
     aces INTEGER NOT NULL DEFAULT 0 CHECK (aces >= 0),
@@ -80,6 +76,7 @@ CREATE TABLE IF NOT EXISTS performances (
     -- Statistiques défensives (blocs supprimés)
     receptions_totales INTEGER NOT NULL DEFAULT 0 CHECK (receptions_totales >= 0),
     receptions_reussies INTEGER NOT NULL DEFAULT 0 CHECK (receptions_reussies >= 0),
+    bloc INTEGER NOT NULL DEFAULT 0 CHECK (bloc >= 0),
     
     -- Statistiques de service
     services_totaux INTEGER NOT NULL DEFAULT 0 CHECK (services_totaux >= 0),
@@ -98,25 +95,37 @@ CREATE TABLE IF NOT EXISTS performances (
     
     -- Contraintes de cohérence des statistiques
     CONSTRAINT chk_receptions_coherence CHECK (receptions_reussies <= receptions_totales),
-    CONSTRAINT chk_services_coherence CHECK (services_reussis <= services_totaux),
+    CONSTRAINT chk_services_coherence CHECK (services_reussis <= services_totaux)
     
-    -- Contrainte d'unicité : un joueur ne peut avoir qu'une performance par date et type
-    UNIQUE(player_id, date_performance, type_performance)
+    -- Contrainte d'unicité supprimée (colonnes supprimées)
 );
 
 -- Index pour optimiser les recherches
 CREATE INDEX IF NOT EXISTS idx_performances_player_id ON performances(player_id);
-CREATE INDEX IF NOT EXISTS idx_performances_date ON performances(date_performance);
-CREATE INDEX IF NOT EXISTS idx_performances_type ON performances(type_performance);
+-- Index sur date_performance/type_performance supprimés
 CREATE INDEX IF NOT EXISTS idx_performances_note ON performances(note_globale);
-CREATE INDEX IF NOT EXISTS idx_performances_player_date ON performances(player_id, date_performance);
-CREATE INDEX IF NOT EXISTS idx_performances_player_type ON performances(player_id, type_performance);
 
 -- =================================================================
 -- VUES UTILES POUR LES STATISTIQUES (CRÉÉES APRÈS LES TABLES)
 -- =================================================================
 
 -- Note: Les vues sont créées dans un script séparé pour éviter les conflits avec Hibernate
+
+-- Harmonisation base existante: supprimer les colonnes si elles existent
+ALTER TABLE players DROP COLUMN IF EXISTS telephone;
+ALTER TABLE players DROP COLUMN IF EXISTS date_debut_equipe;
+ALTER TABLE players DROP COLUMN IF EXISTS actif;
+DROP INDEX IF EXISTS idx_players_actif;
+
+-- Harmonisation performances: suppression des colonnes et index obsolètes
+ALTER TABLE performances DROP COLUMN IF EXISTS date_performance;
+ALTER TABLE performances DROP COLUMN IF EXISTS type_performance;
+-- Ajouter la colonne bloc si manquante
+ALTER TABLE performances ADD COLUMN IF NOT EXISTS bloc INTEGER NOT NULL DEFAULT 0;
+DROP INDEX IF EXISTS idx_performances_date;
+DROP INDEX IF EXISTS idx_performances_type;
+DROP INDEX IF EXISTS idx_performances_player_date;
+DROP INDEX IF EXISTS idx_performances_player_type;
 
 -- =================================================================
 -- TRIGGERS POUR MISE À JOUR AUTOMATIQUE DES TIMESTAMPS
@@ -154,8 +163,8 @@ CREATE INDEX IF NOT EXISTS idx_performance_files_file_size ON performance_files(
 
 COMMENT ON TABLE performance_files IS 'Table des fichiers associés aux performances';
 
-COMMENT ON VIEW v_player_average_stats IS 'Vue des statistiques moyennes par joueur actif';
-COMMENT ON VIEW v_current_absences IS 'Vue des absences actuellement en cours';
+-- Ajouter la colonne de contenu binaire si manquante
+ALTER TABLE performance_files ADD COLUMN IF NOT EXISTS content BYTEA;
 
 -- =================================================================
 -- FIN DU SCHÉMA

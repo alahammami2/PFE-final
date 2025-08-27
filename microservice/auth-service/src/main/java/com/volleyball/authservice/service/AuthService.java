@@ -7,6 +7,7 @@ import com.volleyball.authservice.dto.UpdateUserRequest;
 import com.volleyball.authservice.model.User;
 import com.volleyball.authservice.repository.UserRepository;
 import com.volleyball.authservice.security.JwtUtil;
+import com.volleyball.authservice.model.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,6 +127,7 @@ public class AuthService {
             user.setRole(createUserRequest.getRole());
             user.setActif(true);
             user.setTelephone(createUserRequest.getTelephone());
+            user.setSalaire(createUserRequest.getSalaire());
 
             User savedUser = userRepository.save(user);
 
@@ -163,6 +165,7 @@ public class AuthService {
             existingUser.setRole(updateUserRequest.getRole());
             existingUser.setActif(updateUserRequest.getActif());
             existingUser.setTelephone(updateUserRequest.getTelephone());
+            existingUser.setSalaire(updateUserRequest.getSalaire());
 
             User updatedUser = userRepository.save(existingUser);
 
@@ -177,21 +180,19 @@ public class AuthService {
     }
 
     /**
-     * Supprime un utilisateur (désactive le compte)
+     * Supprime un utilisateur définitivement (suppression physique en base)
      */
     public void deleteUser(Long userId) {
         try {
-            logger.debug("Suppression de l'utilisateur avec l'ID: {}", userId);
+            logger.debug("Suppression définitive de l'utilisateur avec l'ID: {}", userId);
 
-            // Récupération de l'utilisateur existant
+            // Vérifier l'existence avant suppression
             User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID: " + userId));
 
-            // Désactivation du compte au lieu de suppression physique
-            existingUser.setActif(false);
-            userRepository.save(existingUser);
+            userRepository.deleteById(userId);
 
-            logger.info("Utilisateur supprimé (désactivé) avec succès: {}", existingUser.getEmail());
+            logger.info("Utilisateur supprimé définitivement: {}", existingUser.getEmail());
 
         } catch (Exception e) {
             logger.error("Erreur lors de la suppression de l'utilisateur: {}", e.getMessage());
@@ -239,9 +240,59 @@ public class AuthService {
     }
 
     /**
+     * Récupère tous les utilisateurs (actifs et inactifs)
+     */
+    public List<User> getAllUsers() {
+        try {
+            logger.debug("Récupération de tous les utilisateurs (actifs et inactifs)");
+            List<User> users = userRepository.findAll();
+            logger.debug("Nombre d'utilisateurs trouvés: {}", users.size());
+            return users;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de tous les utilisateurs: {}", e.getMessage());
+            throw new RuntimeException("Erreur lors de la récupération de tous les utilisateurs: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Compte les utilisateurs actifs par rôle
+     */
+    public long countActiveUsersByRole(Role role) {
+        try {
+            logger.debug("Comptage des utilisateurs actifs pour le rôle: {}", role);
+            return userRepository.countByRoleAndActifTrue(role);
+        } catch (Exception e) {
+            logger.error("Erreur lors du comptage des utilisateurs pour le rôle {}: {}", role, e.getMessage());
+            throw new RuntimeException("Erreur lors du comptage des utilisateurs: " + e.getMessage());
+        }
+    }
+
+    /**
      * Vérifie si un email existe déjà
      */
     public boolean emailExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    // reset password feature removed
+
+    /**
+     * Récupère un utilisateur par son email
+     */
+    public User getUserByEmail(String email) {
+        try {
+            logger.debug("Récupération de l'utilisateur avec l'email: {}", email);
+
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'email: " + email));
+
+            logger.debug("Utilisateur trouvé: {}", user.getEmail());
+
+            return user;
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'utilisateur par email: {}", e.getMessage());
+            throw new RuntimeException("Erreur lors de la récupération de l'utilisateur par email: " + e.getMessage());
+        }
     }
 }

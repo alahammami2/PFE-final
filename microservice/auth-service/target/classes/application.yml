@@ -12,7 +12,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 30000
-      maximum-pool-size: 10
+      maximum-pool-size: 30
       minimum-idle: 2
 
   jpa:
@@ -26,7 +26,7 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
 
   sql:
     init:

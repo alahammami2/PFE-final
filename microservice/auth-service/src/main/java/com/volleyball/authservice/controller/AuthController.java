@@ -4,6 +4,7 @@ import com.volleyball.authservice.dto.*;
 import com.volleyball.authservice.model.User;
 import com.volleyball.authservice.service.AuthService;
 import jakarta.validation.Valid;
+import com.volleyball.authservice.model.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -62,6 +62,84 @@ public class AuthController {
     }
 
     /**
+     * Endpoint de récupération de tous les utilisateurs avec leurs mots de passe (usage admin uniquement)
+     */
+    @GetMapping("/users/with-passwords")
+    public ResponseEntity<ApiResponse> getAllUsersWithPasswords() {
+        try {
+            logger.warn("[SECURITY] Récupération de tous les utilisateurs avec mot de passe — à utiliser uniquement en DEV/ADMIN");
+
+            List<User> users = authService.getAllUsers();
+
+            List<UserWithPasswordResponse> userResponses = users.stream()
+                .map(user -> new UserWithPasswordResponse(
+                    user.getId(),
+                    user.getNom(),
+                    user.getPrenom(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getActif(),
+                    user.getDateCreation(),
+                    user.getTelephone(),
+                    user.getSalaire(),
+                    user.getMotDePasse()
+                ))
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ApiResponse.success("Utilisateurs + mots de passe récupérés", userResponses));
+
+        } catch (RuntimeException e) {
+            logger.error("Erreur lors de la récupération des utilisateurs avec mot de passe: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erreur interne lors de la récupération des utilisateurs avec mot de passe: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Erreur interne du serveur"));
+        }
+    }
+
+    /**
+     * Compte des utilisateurs actifs (léger pour tableau de bord)
+     */
+    @GetMapping("/users/count")
+    public ResponseEntity<ApiResponse> getActiveUsersCount() {
+        try {
+            logger.info("Calcul du nombre d'utilisateurs actifs");
+            int count = 0;
+            try {
+                var users = authService.getAllActiveUsers();
+                count = (users == null) ? 0 : users.size();
+            } catch (Exception inner) {
+                logger.warn("getAllActiveUsers a échoué, renvoi 0: {}", inner.getMessage());
+            }
+            return ResponseEntity.ok(ApiResponse.success("Nombre d'utilisateurs actifs", count));
+        } catch (Exception e) {
+            logger.error("Erreur lors du comptage des utilisateurs: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Erreur interne du serveur"));
+        }
+    }
+
+    /**
+     * Compte des joueurs actifs (role = JOUEUR)
+     */
+    @GetMapping("/users/count/joueurs")
+    public ResponseEntity<ApiResponse> getActivePlayersCount() {
+        try {
+            logger.info("Calcul du nombre de joueurs actifs");
+            long count = authService.countActiveUsersByRole(Role.JOUEUR);
+            return ResponseEntity.ok(ApiResponse.success("Nombre de joueurs actifs", count));
+        } catch (Exception e) {
+            logger.error("Erreur lors du comptage des joueurs: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Erreur interne du serveur"));
+        }
+    }
+
+    
+
+    /**
      * Endpoint de création d'utilisateur
      */
     @PostMapping("/create-user")
@@ -83,8 +161,8 @@ public class AuthController {
 
             User user = authService.createUser(createUserRequest);
 
-            // Création de la réponse sans le mot de passe
-            UserResponse userResponse = new UserResponse(
+            // Réponse incluant le mot de passe en clair UNE SEULE FOIS (non stocké)
+            CreateUserResult result = new CreateUserResult(
                 user.getId(),
                 user.getNom(),
                 user.getPrenom(),
@@ -92,12 +170,14 @@ public class AuthController {
                 user.getRole(),
                 user.getActif(),
                 user.getDateCreation(),
-                user.getTelephone()
+                user.getTelephone(),
+                user.getSalaire(),
+                createUserRequest.getMotDePasse()
             );
 
             logger.info("Utilisateur créé avec succès: {}", user.getEmail());
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Utilisateur créé avec succès", userResponse));
+                .body(ApiResponse.success("Utilisateur créé avec succès", result));
 
         } catch (RuntimeException e) {
             logger.error("Erreur lors de la création d'utilisateur: {}", e.getMessage());
@@ -142,7 +222,8 @@ public class AuthController {
                 user.getRole(),
                 user.getActif(),
                 user.getDateCreation(),
-                user.getTelephone()
+                user.getTelephone(),
+                user.getSalaire()
             );
 
             logger.info("Utilisateur modifié avec succès: {}", user.getEmail());
@@ -202,7 +283,8 @@ public class AuthController {
                 user.getRole(),
                 user.getActif(),
                 user.getDateCreation(),
-                user.getTelephone()
+                user.getTelephone(),
+                user.getSalaire()
             );
 
             logger.info("Utilisateur récupéré avec succès: {}", user.getEmail());
@@ -220,18 +302,18 @@ public class AuthController {
     }
 
     /**
-     * Endpoint de récupération de tous les utilisateurs actifs
+     * Endpoint de récupération de tous les utilisateurs (actifs et inactifs)
      */
     @GetMapping("/users")
     public ResponseEntity<ApiResponse> getAllUsers() {
         try {
-            logger.info("Récupération de tous les utilisateurs actifs");
+            logger.info("Récupération de tous les utilisateurs (actifs et inactifs)");
 
-            List<User> users = authService.getAllActiveUsers();
+            List<User> users = authService.getAllUsers();
 
-            // Création de la réponse sans les mots de passe
-            List<UserResponse> userResponses = users.stream()
-                .map(user -> new UserResponse(
+            // Inclure le mot de passe dans la réponse, comme demandé (DEV only)
+            List<UserWithPasswordResponse> userResponses = users.stream()
+                .map(user -> new UserWithPasswordResponse(
                     user.getId(),
                     user.getNom(),
                     user.getPrenom(),
@@ -239,7 +321,9 @@ public class AuthController {
                     user.getRole(),
                     user.getActif(),
                     user.getDateCreation(),
-                    user.getTelephone()
+                    user.getTelephone(),
+                    user.getSalaire(),
+                    user.getMotDePasse()
                 ))
                 .collect(Collectors.toList());
 
@@ -267,6 +351,42 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.success("Vérification effectuée", exists));
         } catch (Exception e) {
             logger.error("Erreur lors de la vérification de l'email: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Erreur interne du serveur"));
+        }
+    }
+
+    /**
+     * Endpoint de récupération d'un utilisateur par email
+     */
+    @GetMapping("/users/by-email")
+    public ResponseEntity<ApiResponse> getUserByEmail(@RequestParam String email) {
+        try {
+            logger.info("Récupération d'utilisateur avec l'email: {}", email);
+
+            User user = authService.getUserByEmail(email);
+
+            UserResponse userResponse = new UserResponse(
+                user.getId(),
+                user.getNom(),
+                user.getPrenom(),
+                user.getEmail(),
+                user.getRole(),
+                user.getActif(),
+                user.getDateCreation(),
+                user.getTelephone(),
+                user.getSalaire()
+            );
+
+            logger.info("Utilisateur récupéré avec succès: {}", user.getEmail());
+            return ResponseEntity.ok(ApiResponse.success("Utilisateur récupéré avec succès", userResponse));
+
+        } catch (RuntimeException e) {
+            logger.error("Erreur lors de la récupération d'utilisateur par email: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erreur interne lors de la récupération d'utilisateur par email: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Erreur interne du serveur"));
         }

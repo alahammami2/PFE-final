@@ -33,9 +33,18 @@ public class AbsenceService {
      * Créer une nouvelle absence
      */
     public Absence createAbsence(CreateAbsenceRequest request) {
-        // Vérifier que le joueur existe
-        Player player = playerRepository.findById(request.getPlayerId())
-                .orElseThrow(() -> new RuntimeException("Joueur non trouvé avec l'ID: " + request.getPlayerId()));
+        // Résoudre le joueur soit par ID, soit par email
+        Player player = null;
+        if (request.getPlayerId() != null) {
+            player = playerRepository.findById(request.getPlayerId()).orElse(null);
+        }
+        if (player == null && request.getEmail() != null && !request.getEmail().isEmpty()) {
+            player = playerRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Joueur non trouvé avec l'email: " + request.getEmail()));
+        }
+        if (player == null) {
+            throw new RuntimeException("Aucun joueur fourni: playerId et email sont manquants ou invalides");
+        }
 
         // Vérifier la cohérence des dates
         if (request.getDateFin() != null && request.getDateFin().isBefore(request.getDateDebut())) {
@@ -44,7 +53,7 @@ public class AbsenceService {
 
         // Vérifier les chevauchements d'absences
         if (request.getDateFin() != null && 
-            absenceRepository.existsOverlappingAbsence(request.getPlayerId(), 0L, request.getDateDebut(), request.getDateFin())) {
+            absenceRepository.existsOverlappingAbsence(player.getId(), 0L, request.getDateDebut(), request.getDateFin())) {
             throw new RuntimeException("Cette absence chevauche avec une absence existante pour ce joueur");
         }
 
