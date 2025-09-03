@@ -60,6 +60,7 @@ MAIL_PASSWORD=${mailPass}
       steps {
         bat 'docker compose version || docker-compose version'
         bat 'docker compose -f docker-compose.yml down --remove-orphans || echo "No containers to stop"'
+        bat 'docker container prune -f || echo "No containers to prune"'
         bat 'docker compose -f docker-compose.yml up -d --build || echo "Docker not available - skipping deployment"'
       }
     }
