@@ -10,6 +10,11 @@ target/
 build/
 */build/
 
+# Maven build artifacts (JAR files)
+*.jar
+*.war
+*.ear
+
 # IDE files
 .vscode/
 .idea/
