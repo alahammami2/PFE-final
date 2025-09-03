@@ -97,9 +97,9 @@ MAIL_PASSWORD=${mailPass}
         echo '✅ Application deployed successfully'
         
         echo '⏳ Waiting for discovery service to be ready...'
-        bat 'timeout /t 45 /nobreak || echo "Wait completed"'
+        bat 'ping -n 45 127.0.0.1 > nul || echo "Wait completed"'
         echo '🔍 Verifying service connectivity...'
-        bat 'docker exec discovery-service netstat -tuln | findstr 8761 || echo "Discovery service port check"'
+        bat 'netstat -an | findstr ":8761" || echo "Discovery service port check"'
       }
     }
 
@@ -108,7 +108,7 @@ MAIL_PASSWORD=${mailPass}
         echo '🏥 Checking application health...'
         script {
           echo '⏳ Waiting for services to be ready...'
-          bat 'timeout /t 30 /nobreak || echo "Wait completed"'
+          bat 'ping -n 30 127.0.0.1 > nul || echo "Wait completed"'
           echo '🔍 Checking service status...'
           bat 'docker compose -f docker-compose.yml ps'
           echo '✅ Health check completed'
