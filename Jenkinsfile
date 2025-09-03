@@ -3,7 +3,6 @@ pipeline {
 
   options {
     timestamps()
-    ansiColor('xterm')
   }
 
   stages {
@@ -14,10 +13,6 @@ pipeline {
     }
 
     stage('Prepare .env') {
-      environment {
-        // If you create Jenkins credentials with these IDs, they will be injected.
-        // Otherwise defaults from .env.example will be used if present.
-      }
       steps {
         script {
           def groq = ''
@@ -25,6 +20,7 @@ pipeline {
           def dbp = ''
           def mailUser = ''
           def mailPass = ''
+          
           try {
             withCredentials([
               string(credentialsId: 'groq-api-key', variable: 'CRED_GROQ'),
@@ -40,10 +36,10 @@ pipeline {
             }
           } catch (ignored) {
             // Credentials not configured; will fall back to defaults
+            echo 'Credentials not configured; using default values'
           }
 
-          writeFile file: '.env', text: """
-GROQ_API_KEY=${groq}
+          writeFile file: '.env', text: """GROQ_API_KEY=${groq}
 JWT_SECRET=${jwt}
 DB_PASSWORD=${dbp}
 MAIL_HOST=smtp.gmail.com
