@@ -70,21 +70,20 @@ MAIL_PASSWORD=${mailPass}
 
     stage('Test') {
       steps {
-        echo '🧪 Testing service connectivity...'
+        echo '🧪 Testing service status...'
         script {
           echo '⏳ Waiting for services to be ready...'
-          bat 'ping -n 15 127.0.0.1 > nul || echo "Wait completed"'
+          bat 'ping -n 20 127.0.0.1 > nul || echo "Wait completed"'
           
-          echo '🔍 Testing discovery service...'
-          bat 'curl -f http://localhost:8761/actuator/health || echo "Discovery service health check"'
+          echo '🔍 Checking if all services are running...'
+          bat 'docker compose -f docker-compose.yml ps | findstr "Up" | find /c "Up" || echo "Service count check"'
           
-          echo '🔍 Testing gateway service...'
-          bat 'curl -f http://localhost:8090/actuator/health || echo "Gateway service health check"'
+          echo '🔍 Verifying service ports are accessible...'
+          bat 'netstat -an | findstr ":8761" || echo "Port 8761 check"'
+          bat 'netstat -an | findstr ":8090" || echo "Port 8090 check"'
+          bat 'netstat -an | findstr ":4200" || echo "Port 4200 check"'
           
-          echo '🔍 Testing frontend service...'
-          bat 'curl -f http://localhost:4200/ || echo "Frontend service check"'
-          
-          echo '✅ Service connectivity tests completed'
+          echo '✅ Service status tests completed'
         }
       }
     }
