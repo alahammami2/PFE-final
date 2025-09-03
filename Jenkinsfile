@@ -73,7 +73,7 @@ MAIL_PASSWORD=${mailPass}
         echo '🧪 Testing service connectivity...'
         script {
           echo '⏳ Waiting for services to be ready...'
-          bat 'timeout /t 15 /nobreak || echo "Wait completed"'
+          bat 'ping -n 15 127.0.0.1 > nul || echo "Wait completed"'
           
           echo '🔍 Testing discovery service...'
           bat 'curl -f http://localhost:8761/actuator/health || echo "Discovery service health check"'
