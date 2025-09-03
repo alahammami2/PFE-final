@@ -50,7 +50,7 @@ eureka:
 langchain4j:
   chat-model:
     groq:
-      api-key: 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
+      api-key: ${GROQ_API_KEY}
       base-url: https://api.groq.com/openai/v1
       model-name: llama3-8b-8192
 

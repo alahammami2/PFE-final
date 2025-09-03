@@ -1,0 +1,251 @@
+version: "3.9"
+
+networks:
+  app-net:
+    driver: bridge
+
+services:
+  discovery-service:
+    build: ./microservice/discovery-service
+    image: vb/discovery-service:latest
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - JAVA_OPTS=
+    networks:
+      - app-net
+
+  gateway-service:
+    build: ./microservice/gateway-service
+    image: vb/gateway-service:latest
+    container_name: gateway-service
+    ports:
+      - "8090:8090"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+    networks:
+      - app-net
+
+  chatbot-gateway:
+    build: ./microservice/chatbot-gateway
+    image: vb/chatbot-gateway:latest
+    container_name: chatbot-gateway
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+    networks:
+      - app-net
+
+  performance-db:
+    image: postgres:16-alpine
+    container_name: performance-db
+    environment:
+      - POSTGRES_DB=performance_db
+      - POSTGRES_USER=performance_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - perf_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  performance-service:
+    build: ./microservice/performance-service
+    image: vb/performance-service:latest
+    container_name: performance-service
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://performance-db:5432/performance_db
+      - SPRING_DATASOURCE_USERNAME=performance_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - performance-db
+    networks:
+      - app-net
+
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth-db
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=auth_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  auth-service:
+    build: ./microservice/auth-service
+    image: vb/auth-service:latest
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/auth_db
+      - SPRING_DATASOURCE_USERNAME=auth_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - auth-db
+    networks:
+      - app-net
+
+  admin-db:
+    image: postgres:16-alpine
+    container_name: admin-db
+    environment:
+      - POSTGRES_DB=admin_request_db
+      - POSTGRES_USER=admin_request_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  admin-request-service:
+    build: ./microservice/admin-request-service
+    image: vb/admin-request-service:latest
+    container_name: admin-request-service
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - DATABASE_URL=jdbc:postgresql://admin-db:5432/admin_request_db
+      - DATABASE_USERNAME=admin_request_user
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - admin-db
+    networks:
+      - app-net
+
+  medical-db:
+    image: postgres:16-alpine
+    container_name: medical-db
+    environment:
+      - POSTGRES_DB=medical_db
+      - POSTGRES_USER=medical_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - medical_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  medical-service:
+    build: ./microservice/medical-service
+    image: vb/medical-service:latest
+    container_name: medical-service
+    ports:
+      - "8086:8086"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - DATABASE_URL=jdbc:postgresql://medical-db:5432/medical_db
+      - DATABASE_USERNAME=medical_user
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - medical-db
+    networks:
+      - app-net
+
+  finance-db:
+    image: postgres:16-alpine
+    container_name: finance-db
+    environment:
+      - POSTGRES_DB=finance_db
+      - POSTGRES_USER=finance_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - finance_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  finance-service:
+    build: ./microservice/finance-service
+    image: vb/finance-service:latest
+    container_name: finance-service
+    ports:
+      - "8087:8087"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://finance-db:5432/finance_db
+      - SPRING_DATASOURCE_USERNAME=finance_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - finance-db
+    networks:
+      - app-net
+
+  planning-db:
+    image: postgres:16-alpine
+    container_name: planning-db
+    environment:
+      - POSTGRES_DB=planning_db
+      - POSTGRES_USER=planning_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - planning_db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  planning-service:
+    build: ./microservice/planning-service
+    image: vb/planning-service:latest
+    container_name: planning-service
+    ports:
+      - "8089:8089"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://planning-db:5432/planning_db
+      - SPRING_DATASOURCE_USERNAME=planning_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JAVA_OPTS=
+    depends_on:
+      - discovery-service
+      - planning-db
+    networks:
+      - app-net
+
+  frontend:
+    build: ./frontend
+    image: vb/frontend:latest
+    container_name: frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - gateway-service
+    networks:
+      - app-net
+
+volumes:
+  perf_db_data:
+  auth_db_data:
+  admin_db_data:
+  medical_db_data:
+  finance_db_data:
+  planning_db_data:

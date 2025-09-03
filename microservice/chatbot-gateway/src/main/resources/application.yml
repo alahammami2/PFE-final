@@ -17,9 +17,7 @@ management:
 api:
   groq:
     url: https://api.groq.com/openai/v1/chat/completions
-    key: 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
-
-
+    key: ${GROQ_API_KEY}
 
 services:
   performance:

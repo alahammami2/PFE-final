@@ -8,7 +8,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
 
 spring:
   application:
@@ -22,7 +22,7 @@ spring:
       routes:
         # Performance Service
         - id: performance-service
-          uri: http://localhost:8083
+          uri: http://performance-service:8083
           predicates:
             - Path=/api/performance/**
           
@@ -32,41 +32,41 @@ spring:
         
         # Admin Request Service
         - id: admin-request-service
-          uri: http://localhost:8085
+          uri: http://admin-request-service:8085
           predicates:
             - Path=/api/admin-requests/**
           
         
         # Medical Service
         - id: medical-service
-          uri: http://localhost:8086
+          uri: http://medical-service:8086
           predicates:
             - Path=/api/medical/**
           
         
         # Finance Service
         - id: finance-service
-          uri: http://localhost:8087
+          uri: http://finance-service:8087
           predicates:
             - Path=/api/finance/**
           
         
         # Auth Service
         - id: auth-service
-          uri: http://localhost:8081
+          uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/**
           
         
         # Planning Service
         - id: planning-service
-          uri: http://localhost:8089
+          uri: http://planning-service:8089
           predicates:
             - Path=/api/planning/**
 
         # Chatbot Gateway
         - id: chatbot-gateway
-          uri: http://localhost:8082
+          uri: http://chatbot-gateway:8082
           predicates:
             - Path=/api/chatbot/**
 
