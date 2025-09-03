@@ -59,7 +59,7 @@ MAIL_PASSWORD=${mailPass}
     stage('Docker Compose Build & Up') {
       steps {
         bat 'docker compose version || docker-compose version'
-        bat 'docker compose -f docker-compose.yml down || echo "No containers to stop"'
+        bat 'docker compose -f docker-compose.yml down --remove-orphans || echo "No containers to stop"'
         bat 'docker compose -f docker-compose.yml up -d --build || echo "Docker not available - skipping deployment"'
       }
     }
