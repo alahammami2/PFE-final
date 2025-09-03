@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: volleyball-platform
+  labels:
+    name: volleyball-platform
+    app: volleyball
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: volleyball-monitoring
+  labels:
+    name: volleyball-monitoring
+    app: volleyball
+    environment: monitoring

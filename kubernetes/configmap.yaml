@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volleyball-config
+  namespace: volleyball-platform
+data:
+  # Discovery Service Configuration
+  discovery-service.yml: |
+    server:
+      port: 8761
+    eureka:
+      instance:
+        hostname: discovery-service
+        prefer-ip-address: true
+      client:
+        register-with-eureka: false
+        fetch-registry: false
+        service-url:
+          defaultZone: http://discovery-service:8761/eureka/
+  
+  # Gateway Service Configuration
+  gateway-service.yml: |
+    server:
+      port: 8090
+    spring:
+      cloud:
+        gateway:
+          discovery:
+            locator:
+              enabled: true
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+            - id: medical-service
+              uri: lb://medical-service
+              predicates:
+                - Path=/api/medical/**
+            - id: performance-service
+              uri: lb://performance-service
+              predicates:
+                - Path=/api/performance/**
+            - id: planning-service
+              uri: lb://planning-service
+              predicates:
+                - Path=/api/planning/**
+            - id: finance-service
+              uri: lb://finance-service
+              predicates:
+                - Path=/api/finance/**
+            - id: admin-request-service
+              uri: lb://admin-request-service
+              predicates:
+                - Path=/api/admin/**
+            - id: chatbot-gateway
+              uri: lb://chatbot-gateway
+              predicates:
+                - Path=/api/chatbot/**
+  
+  # Auth Service Configuration
+  auth-service.yml: |
+    server:
+      port: 8081
+    spring:
+      datasource:
+        url: jdbc:postgresql://auth-db:5432/auth_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+      security:
+        jwt:
+          secret: ${JWT_SECRET}
+          expiration: 86400000
+  
+  # Medical Service Configuration
+  medical-service.yml: |
+    server:
+      port: 8086
+    spring:
+      datasource:
+        url: jdbc:postgresql://medical-db:5432/medical_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+  
+  # Performance Service Configuration
+  performance-service.yml: |
+    server:
+      port: 8083
+    spring:
+      datasource:
+        url: jdbc:postgresql://performance-db:5432/performance_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+  
+  # Planning Service Configuration
+  planning-service.yml: |
+    server:
+      port: 8089
+    spring:
+      datasource:
+        url: jdbc:postgresql://planning-db:5432/planning_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+  
+  # Finance Service Configuration
+  finance-service.yml: |
+    server:
+      port: 8087
+    spring:
+      datasource:
+        url: jdbc:postgresql://finance-db:5432/finance_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+  
+  # Admin Request Service Configuration
+  admin-request-service.yml: |
+    server:
+      port: 8085
+    spring:
+      datasource:
+        url: jdbc:postgresql://admin-db:5432/admin_db
+        username: admin
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        hibernate:
+          ddl-auto: update
+        show-sql: false
+  
+  # Chatbot Gateway Configuration
+  chatbot-gateway.yml: |
+    server:
+      port: 8082
+    api:
+      groq:
+        url: https://api.groq.com/openai/v1/chat/completions
+        key: ${GROQ_API_KEY}
+  
+  # Frontend Configuration
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        
+        location / {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html;
+        }
+        
+        location /api/ {
+            proxy_pass http://gateway-service:8090;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
