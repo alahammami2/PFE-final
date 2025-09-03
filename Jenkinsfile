@@ -89,7 +89,7 @@ MAIL_PASSWORD=${mailPass}
     stage('Health Check') {
       steps {
         echo '🏥 Checking application health...'
-        bat 'timeout 30 docker compose -f docker-compose.yml ps || echo "Health check completed"'
+        bat 'docker compose -f docker-compose.yml ps || echo "Health check completed"'
         echo '✅ Health check completed'
       }
     }
