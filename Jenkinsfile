@@ -72,14 +72,17 @@ MAIL_PASSWORD=${mailPass}
       steps {
         echo '🧪 Testing service connectivity...'
         script {
+          echo '⏳ Waiting for services to be ready...'
+          bat 'timeout /t 15 /nobreak || echo "Wait completed"'
+          
           echo '🔍 Testing discovery service...'
-          bat 'docker exec discovery-service netstat -tuln | findstr 8761 || echo "Discovery service port check"'
+          bat 'curl -f http://localhost:8761/actuator/health || echo "Discovery service health check"'
           
           echo '🔍 Testing gateway service...'
-          bat 'docker exec gateway-service netstat -tuln | findstr 8090 || echo "Gateway service port check"'
+          bat 'curl -f http://localhost:8090/actuator/health || echo "Gateway service health check"'
           
           echo '🔍 Testing frontend service...'
-          bat 'docker exec frontend netstat -tuln | findstr 80 || echo "Frontend service port check"'
+          bat 'curl -f http://localhost:4200/ || echo "Frontend service check"'
           
           echo '✅ Service connectivity tests completed'
         }
