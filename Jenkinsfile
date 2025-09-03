@@ -83,14 +83,24 @@ MAIL_PASSWORD=${mailPass}
         bat 'docker container prune -f || echo "No containers to prune"'
         bat 'docker compose -f docker-compose.yml up -d'
         echo '✅ Application deployed successfully'
+        
+        echo '⏳ Waiting for discovery service to be ready...'
+        bat 'timeout /t 45 /nobreak || echo "Wait completed"'
+        echo '🔍 Verifying service connectivity...'
+        bat 'docker exec discovery-service netstat -tuln | findstr 8761 || echo "Discovery service port check"'
       }
     }
 
     stage('Health Check') {
       steps {
         echo '🏥 Checking application health...'
-        bat 'docker compose -f docker-compose.yml ps || echo "Health check completed"'
-        echo '✅ Health check completed'
+        script {
+          echo '⏳ Waiting for services to be ready...'
+          bat 'timeout /t 30 /nobreak || echo "Wait completed"'
+          echo '🔍 Checking service status...'
+          bat 'docker compose -f docker-compose.yml ps'
+          echo '✅ Health check completed'
+        }
       }
     }
   }
