@@ -37,6 +37,11 @@ pipeline {
           } catch (ignored) {
             // Credentials not configured; will fall back to defaults
             echo 'Credentials not configured; using default values'
+            groq = 'sk_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+            jwt = 'my_super_secret_jwt_key_for_volleyball_platform_2024'
+            dbp = 'volleyball_db_password_2024'
+            mailUser = 'your_email@gmail.com'
+            mailPass = 'your_app_password_here'
           }
 
           writeFile file: '.env', text: """GROQ_API_KEY=${groq}
@@ -53,15 +58,15 @@ MAIL_PASSWORD=${mailPass}
 
     stage('Docker Compose Build & Up') {
       steps {
-        sh 'docker compose version || docker-compose version'
-        sh 'docker compose -f docker-compose.yml up -d --build'
+        bat 'docker compose version || docker-compose version'
+        bat 'docker compose -f docker-compose.yml up -d --build'
       }
     }
   }
 
   post {
     always {
-      sh 'docker compose ps || true'
+      bat 'docker compose ps || echo "Docker compose ps failed"'
     }
   }
 }
